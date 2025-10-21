@@ -6,7 +6,7 @@ This is a personal project developed by Marcus Izumi, in an attempt to implement
 
 ## Personal Background / Motivation
 
-Recently, I have completed a software engineer internship at an investment bank, and was exposed to equity systems and how technology really intersects with financial markets - and then I heard about this paper.
+Recently, I completed a software engineer internship at an investment bank, and was exposed to equity systems and how technology really intersects with financial markets - and then I heard about this paper.
 
 When reading through the paper, I noticed how there was not a lot of technical explanation or code snippets on how the framework was built and explored, so I decided to try to implement them, with the little knowledge I have as a college student.
 
