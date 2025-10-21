@@ -1,4 +1,2 @@
-"""News loader placeholder described in AGENT.md.
-
-See AGENT.md for implementation details.
+"""News loader placeholder.
 """
