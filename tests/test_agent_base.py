@@ -37,7 +37,7 @@ def _blank_report() -> AgentReport:
 
 
 class ProxyAgent(BaseAgent):
-    """Overrides abstract methods but relies on parent implementations."""
+    """Overrides abstract methods but delegates directly to the base class."""
 
     async def analyze(
         self,
@@ -115,4 +115,3 @@ async def test_concrete_agent_produces_report() -> None:
     assert isinstance(report, AgentReport)
     assert report.role is AgentRole.SENTIMENT
     assert report.ticker == "MSFT"
-
