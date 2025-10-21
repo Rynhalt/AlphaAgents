@@ -1,6 +1,6 @@
 ## AlphaAgents
 
-This is a personal project developed by Marcus Izumi in an attemps to implement a prototype for multi-agent framework as discussed in the paper written by BlackRock in August this year:
+This is a personal project developed by Marcus Izumi, in an attempt to implement a prototype for multi-agent framework as discussed in the paper written by BlackRock research scientists in August this year (2025):
 - *AlphaAgents: Large Language Model based Multi-Agents for Equity Portfolio Constructions*
 - https://arxiv.org/html/2508.11152v1
 
