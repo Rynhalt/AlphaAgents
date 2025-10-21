@@ -3,13 +3,23 @@
 from __future__ import annotations
 
 from datetime import date, datetime
-from enum import StrEnum
+from enum import Enum
 from typing import Dict, List, Optional
 
 from pydantic import BaseModel, Field, field_validator
 
 
 #These will be used, to indicate which type of evidence each agent used
+try:
+    from enum import StrEnum
+except ImportError:
+    class StrEnum(str, Enum):
+        """Fallback StrEnum for Python < 3.11."""
+
+        def __str__(self) -> str:
+            return str(self.value)
+
+
 class EvidenceSource(StrEnum):
     """Supported evidence origin types used by agent reports."""
 
