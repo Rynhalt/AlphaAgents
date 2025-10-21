@@ -12,4 +12,10 @@ When reading through the paper, I noticed how there was not a lot of technical e
 
 The personal goal here, for me, is to be familaized with multi-agentic frameworks, as well as to get a sense of how fundamental, technical and macro analysis are done during the valuation of their stocks.
 
+This project is far from mathematical or production-level for now.
 
+The current implementation focuses on architecture, agent interaction, and reasoning flow, not on financial accuracy or quantitative modeling.
+
+Early agents use deterministic, rule-based logic and mocked data to simulate analyst behavior, serving as a foundation for learning and experimentation.
+
+As development progresses, the system may evolve toward more data-driven or LLM-integrated reasoning, but the emphasis remains on understanding multi-agent orchestration rather than achieving trading performance.
