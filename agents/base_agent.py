@@ -174,6 +174,7 @@ class BaseAgent(ABC):
         try:
             response = self._call_llm(prompt_text, variables)
             if response:
+                response.setdefault("fallback", False)
                 return response
         except Exception as exc:  # pragma: no cover - network-dependent
             self._logger.warning("LLM call failed for %s: %s", self.name, exc)
