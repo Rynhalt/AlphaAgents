@@ -210,4 +210,7 @@ AGENT.md
 DEV.md
 MILESTONE.md
 Prompt.md
-
+app/static/plots/*.png
+storage/portfolio_weights.csv
+storage/debate_log.jsonl
+storage/consensus.jsonl

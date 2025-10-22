@@ -21,8 +21,10 @@ def test_run_backtest_generates_metrics_and_weights(tmp_path: Path) -> None:
         "TSLA": [0.02, -0.01, 0.005, 0.018],
     }
 
-    metrics = run_backtest(weights, returns, storage_dir=tmp_path)
-    weights_file = tmp_path / "portfolio_weights.csv"
+    storage_dir = tmp_path / "storage"
+    plot_dir = tmp_path / "plots"
+    metrics = run_backtest(weights, returns, storage_dir=storage_dir, plot_dir=plot_dir)
+    weights_file = storage_dir / "portfolio_weights.csv"
 
     assert weights_file.exists()
     contents = weights_file.read_text(encoding="utf-8")
@@ -31,4 +33,21 @@ def test_run_backtest_generates_metrics_and_weights(tmp_path: Path) -> None:
     assert metrics["days"] == 4
     assert metrics["final_return"] > 0
     assert metrics["sharpe"] >= 0
+    assert "plots" in metrics
 
+    cumulative_path = Path(metrics["plots"]["cumulative"])
+    rolling_path = Path(metrics["plots"]["rolling_sharpe"])
+    assert cumulative_path.exists()
+    assert rolling_path.exists()
+
+
+def test_default_plot_dir_creates_static_files() -> None:
+    weights = {"AAPL": 1.0}
+    returns = {"AAPL": [0.01, 0.02, -0.005]}
+
+    run_backtest(weights, returns)
+
+    cumulative = Path("app/static/plots/cumulative_return.png")
+    rolling = Path("app/static/plots/rolling_sharpe.png")
+    assert cumulative.exists()
+    assert rolling.exists()
