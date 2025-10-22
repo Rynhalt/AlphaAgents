@@ -19,7 +19,11 @@ class ValuationAgent(BaseAgent):
     """Produces deterministic valuation metrics using mocked price data."""
 
     def __init__(self) -> None:
-        super().__init__(role=AgentRole.VALUATION, name="ValuationAgent")
+        super().__init__(
+            role=AgentRole.VALUATION,
+            name="ValuationAgent",
+            prompt_file="prompts/valuation.md",
+        )
         self._valuation_cache: Dict[str, Dict[str, float]] = {
             "AAPL": {
                 "momo_63d": 0.12,
@@ -48,6 +52,12 @@ class ValuationAgent(BaseAgent):
         risk_profile: Optional[str] = None,
     ) -> AgentReport:
         metrics = self._lookup_metrics(ticker)
+        llm_stub = self.query_llm({
+            "ticker": ticker,
+            "risk_profile": risk_profile,
+            "asof_date": asof_date.isoformat(),
+        })
+        metrics["llm_support_score"] = llm_stub["score"]
         decision = self._decide(metrics)
         rationale = self._build_rationale(ticker, metrics, decision)
 
@@ -59,14 +69,17 @@ class ValuationAgent(BaseAgent):
             timestamp=datetime.combine(asof_date, datetime.min.time()),
         )
 
+        bullets = self._build_bullets(metrics)
+        bullets.append(f"LLM support score: {llm_stub['score']:.2f}")
+
         return AgentReport(
             ticker=ticker.upper(),
             asof_date=asof_date,
             role=self.role,
             decision=decision,
             confidence=self._confidence_from_metrics(metrics),
-            rationale=rationale,
-            bullets=self._build_bullets(metrics),
+            rationale=f"{rationale} | {llm_stub['content']}",
+            bullets=bullets,
             evidence_refs=[evidence],
             red_flags=self._detect_red_flags(metrics),
             metrics=metrics,
