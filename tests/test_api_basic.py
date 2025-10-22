@@ -32,3 +32,16 @@ def test_run_consensus_returns_all_reports() -> None:
     per_role = consensus["per_role"]
     assert set(per_role.keys()) == {"fundamental", "sentiment", "valuation"}
     assert len(payload["reports"]) == 3
+
+
+def test_stream_endpoint_emits_events() -> None:
+    with client.stream("GET", "/stream/AAPL") as response:
+        assert response.status_code == 200
+        chunks = []
+        for chunk in response.iter_lines():
+            if chunk:
+                chunks.append(chunk.decode("utf-8") if isinstance(chunk, bytes) else chunk)
+            if len(chunks) >= 3:
+                break
+        assert chunks, "Expected SSE chunks from debate stream"
+        assert chunks[0].startswith("data: ")

@@ -4,12 +4,14 @@ from __future__ import annotations
 
 import asyncio
 from datetime import date
-from typing import Dict, List
+from typing import Dict, Iterable, List
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.responses import StreamingResponse
 
 from agents.base_agent import AgentReport
 from agents.coordinator import Coordinator
+from agents.debate import DebateEngine, stream_messages
 from agents.dummy_agent import DummyAgent
 from agents.fundamental_agent import FundamentalAgent
 from agents.sentiment_agent import SentimentAgent
@@ -55,6 +57,24 @@ async def run_consensus(ticker: str) -> Dict[str, object]:
     }
 
 
+@app.get("/stream/{ticker}")
+async def stream_debate(ticker: str, request: Request) -> StreamingResponse:
+    """Stream debate messages for the requested ticker."""
+    asof = date.today()
+    reports_list = await _gather_agent_reports(ticker, asof)
+    reports = {report.role: report for report in reports_list}
+    engine = DebateEngine()
+    messages = engine.run(reports)
+    generator = _sse_generator(messages)
+    return StreamingResponse(generator, media_type="text/event-stream")
+
+
+def _sse_generator(messages: Iterable) -> Iterable[str]:
+    """Wrap debate messages into SSE-formatted strings."""
+    for chunk in stream_messages(messages):
+        yield chunk
+
+
 async def _gather_agent_reports(ticker: str, asof: date) -> List[AgentReport]:
     """Concurrent helper that executes all domain agents."""
     results = await asyncio.gather(
@@ -63,4 +83,3 @@ async def _gather_agent_reports(ticker: str, asof: date) -> List[AgentReport]:
         valuation_agent.analyze(ticker, asof),
     )
     return list(results)
-
