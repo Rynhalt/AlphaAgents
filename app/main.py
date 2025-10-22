@@ -4,10 +4,13 @@ from __future__ import annotations
 
 import asyncio
 from datetime import date
+from pathlib import Path
 from typing import Dict, Iterable, List
 
 from fastapi import FastAPI, Request
-from fastapi.responses import StreamingResponse
+from fastapi.responses import HTMLResponse, StreamingResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
 
 from agents.base_agent import AgentReport
 from agents.coordinator import Coordinator
@@ -18,6 +21,9 @@ from agents.sentiment_agent import SentimentAgent
 from agents.valuation_agent import ValuationAgent
 
 app = FastAPI(title="AlphaAgents")
+BASE_DIR = Path(__file__).resolve().parent
+templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
+app.mount("/static", StaticFiles(directory=BASE_DIR / "static"), name="static")
 dummy_agent = DummyAgent()
 fundamental_agent = FundamentalAgent()
 sentiment_agent = SentimentAgent()
@@ -55,6 +61,12 @@ async def run_consensus(ticker: str) -> Dict[str, object]:
         "consensus": consensus.model_dump(),
         "reports": [report.model_dump() for report in reports],
     }
+
+
+@app.get("/", response_class=HTMLResponse)
+async def index(request: Request) -> HTMLResponse:
+    """Render the basic dashboard page."""
+    return templates.TemplateResponse("index.html", {"request": request})
 
 
 @app.get("/stream/{ticker}")

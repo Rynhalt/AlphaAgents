@@ -2,9 +2,93 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>AlphaAgents</title>
+    <title>AlphaAgents Debate</title>
+    <link rel="stylesheet" href="/static/css/style.css" />
   </head>
   <body>
-    <h1>AlphaAgents Prototype</h1>
+    <main class="container">
+      <section class="hero">
+        <h1>AlphaAgents Prototype</h1>
+        <p>Enter a ticker to trigger a debate among the domain agents.</p>
+        <form id="run-form" class="run-form">
+          <label>
+            Ticker
+            <input id="ticker-input" name="ticker" value="AAPL" />
+          </label>
+          <button type="submit">Start Session</button>
+        </form>
+      </section>
+
+      <section class="debate-panel">
+        <header>
+          <h2>Live Debate Stream</h2>
+          <span id="status" class="status status-idle">Idle</span>
+        </header>
+        <ul id="debate-log" class="debate-log"></ul>
+      </section>
+    </main>
+
+    <script>
+      const form = document.getElementById("run-form");
+      const tickerInput = document.getElementById("ticker-input");
+      const log = document.getElementById("debate-log");
+      const statusBadge = document.getElementById("status");
+      let currentSource;
+
+      function appendMessage(message) {
+        const li = document.createElement("li");
+        li.className = "debate-entry";
+        li.innerHTML = `
+          <span class="meta">Round ${message.round} · ${message.agent}</span>
+          <span class="content">${message.content}</span>
+        `;
+        log.appendChild(li);
+        li.scrollIntoView({ behavior: "smooth", block: "end" });
+      }
+
+      function setStatus(text, state) {
+        statusBadge.textContent = text;
+        statusBadge.className = `status status-${state}`;
+      }
+
+      function closeStream() {
+        if (currentSource) {
+          currentSource.close();
+          currentSource = undefined;
+        }
+      }
+
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        closeStream();
+        log.innerHTML = "";
+        const ticker = tickerInput.value.trim() || "AAPL";
+        setStatus("Loading…", "loading");
+
+        try {
+          const response = await fetch(`/run_consensus?ticker=${ticker}`);
+          if (!response.ok) {
+            throw new Error("Failed to start session");
+          }
+          const { consensus } = await response.json();
+          setStatus(`Consensus: ${consensus.final_decision}`, "active");
+        } catch (error) {
+          setStatus("Error", "error");
+          console.error(error);
+          return;
+        }
+
+        currentSource = new EventSource(`/stream/${ticker}`);
+        currentSource.onopen = () => setStatus("Streaming", "active");
+        currentSource.onmessage = (event) => {
+          const payload = JSON.parse(event.data);
+          appendMessage(payload);
+        };
+        currentSource.onerror = () => {
+          setStatus("Disconnected", "idle");
+          closeStream();
+        };
+      });
+    </script>
   </body>
 </html>
