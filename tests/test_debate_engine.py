@@ -59,8 +59,12 @@ class MockAgent(BaseAgent):
         round_index = variables["round"]
         assert "context" in variables
         assert len(variables["context"]) > 0
+        peers = variables.get("peer_reports", {})
+        peer_names = ",".join(peers.keys()) or "none"
+        peer_msgs = variables.get("peer_messages", [])
+        content = f"{self.role.value}-{stage}-round{round_index}-peers:{peer_names}-msgs:{len(peer_msgs)}"
         return {
-            "content": f"{self.role.value}-{stage}-round{round_index}",
+            "content": content,
             "score": 0.9,
             "fallback": False,
         }
@@ -86,6 +90,8 @@ def test_debate_engine_emits_llm_messages(tmp_path: Path) -> None:
         assert message.score == 0.9
         assert message.fallback is False
         assert message.content
+        if message.stage == "critique":
+            assert "peers:" in message.content
 
     trace_lines = trace_path.read_text(encoding="utf-8").strip().splitlines()
     assert len(trace_lines) >= 6  # critiques + revisions from round 1

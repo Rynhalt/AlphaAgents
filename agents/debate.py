@@ -73,9 +73,16 @@ class DebateEngine:
                     for peer_role, peer_report in current_reports.items()
                     if peer_role != role
                 }
+                # Retrieve contextual snippets (filings/news/prices) relevant to this critique.
                 context = self.retriever.search(
                     f"{report.ticker} {role.value} critique round {round_index}"
                 )
+                # Capture recent peer messages to encourage cross-agent references.
+                peer_messages = [
+                    msg.model_dump()
+                    for msg in reversed(messages)
+                    if msg.agent != role.value
+                ][:5]
                 variables = {
                     "stage": "critique",
                     "round": round_index,
@@ -84,6 +91,7 @@ class DebateEngine:
                     "agent_report": report.model_dump(),
                     "peer_reports": peer_reports,
                     "previous_messages": [msg.model_dump() for msg in messages],
+                    "peer_messages": list(reversed(peer_messages)),
                     "context": context,
                 }
                 llm_result = agent.query_llm(variables)
@@ -138,9 +146,15 @@ class DebateEngine:
                 updated_reports[role] = report
                 continue
             critique_messages = critiques_by_role.get(role, [])
+            # Supply revised prompts with relevant context for tighter feedback loop.
             context = self.retriever.search(
                 f"{report.ticker} {role.value} revision round {round_index}"
             )
+            prior_messages = [
+                msg.model_dump()
+                for msg in reversed(messages)
+                if msg.agent != role.value
+            ][:5]
             variables = {
                 "stage": "revision",
                 "round": round_index,
@@ -151,6 +165,7 @@ class DebateEngine:
                     {"agent": msg.agent, "content": msg.content}
                     for msg in critique_messages
                 ],
+                "peer_messages": list(reversed(prior_messages)),
                 "context": context,
             }
             llm_result = agent.query_llm(variables)
