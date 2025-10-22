@@ -55,6 +55,7 @@ class Coordinator:
         first_report = reports[0]
         consensus_date = asof_date or first_report.asof_date
 
+        # Generate a narrative explanation leveraging reports, debate log, and backtest summary.
         llm_payload = self._llm_explanation(
             reports=list(per_role.values()),
             debate_messages=debate_messages or [],
@@ -161,6 +162,7 @@ class Coordinator:
         final_decision: str,
         session_id: Optional[str],
     ) -> Dict[str, Any]:
+        # Use a lightweight coordinator agent so we reuse BaseAgent.query_llm logic.
         coordinator_agent = CoordinatorAgent(prompt_file=self.prompt_file)
         variables = {
             "final_decision": final_decision,
@@ -186,6 +188,7 @@ class Coordinator:
         return parsed
 
     def _parse_llm_payload(self, raw: Dict[str, Any]) -> Dict[str, Any]:
+        # Coordinator responses are expected as JSON strings; fall back gracefully if not.
         content = raw.get("content", "")
         fallback = bool(raw.get("fallback", False))
         confidence = raw.get("score")
