@@ -5,7 +5,9 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from datetime import date, datetime
 from enum import Enum
-from typing import Dict, List, Optional
+from pathlib import Path
+import random
+from typing import Dict, List, Optional, Any
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -105,9 +107,16 @@ class Consensus(BaseModel):
 class BaseAgent(ABC):
     """Abstract agent interface used by all domain-specific agents."""
 
-    def __init__(self, role: AgentRole, name: Optional[str] = None) -> None:
+    def __init__(
+        self,
+        role: AgentRole,
+        name: Optional[str] = None,
+        prompt_file: Optional[str] = None,
+    ) -> None:
         self.role = role
         self.name = name or f"{role.value.title()}Agent"
+        self.prompt_file = prompt_file
+        self._prompt_cache: Optional[str] = None
 
     @abstractmethod
     async def analyze(
@@ -136,3 +145,36 @@ class BaseAgent(ABC):
     ) -> AgentReport:
         """Generate a revised AgentReport after receiving critiques."""
         raise NotImplementedError
+
+    def load_prompt(self) -> str:
+        """Return the cached prompt text for this agent."""
+        if not self.prompt_file:
+            raise ValueError(f"No prompt file configured for {self.name}.")
+        if self._prompt_cache is None:
+            prompt_path = Path(self.prompt_file)
+            if not prompt_path.is_absolute():
+                base = Path(__file__).resolve().parents[1]
+                prompt_path = base / prompt_path
+            self._prompt_cache = prompt_path.read_text(encoding="utf-8")
+        return self._prompt_cache
+
+    def query_llm(self, variables: Dict[str, Any]) -> Dict[str, Any]:
+        """Deterministic stub for future LLM integration."""
+
+        prompt_text = self.load_prompt()
+        key = "|".join(
+            f"{k}:{variables[k]}" for k in sorted(variables) if variables.get(k) is not None
+        )
+        seed_value = sum(ord(ch) for ch in key + self.role.value)
+        rng = random.Random(seed_value)
+        score = round(0.25 + rng.random() * 0.5, 3)
+        summary = variables.get("ticker", "UNKNOWN")
+        content = (
+            f"[LLM:{self.role.value}] Synthesized review for {summary}. "
+            f"Confidence score {score:.3f}."
+        )
+        return {
+            "content": content,
+            "score": score,
+            "prompt_excerpt": prompt_text.strip()[:120],
+        }
