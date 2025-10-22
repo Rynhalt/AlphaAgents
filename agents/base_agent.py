@@ -2,14 +2,22 @@
 
 from __future__ import annotations
 
+import json
+import logging
+import os
+import random
 from abc import ABC, abstractmethod
 from datetime import date, datetime
 from enum import Enum
 from pathlib import Path
-import random
-from typing import Dict, List, Optional, Any
+from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Field, field_validator
+
+try:
+    from openai import OpenAI
+except Exception:  # pragma: no cover - optional dependency for offline tests
+    OpenAI = None
 
 try:  # Python < 3.11 fallback
     from enum import StrEnum
@@ -117,6 +125,7 @@ class BaseAgent(ABC):
         self.name = name or f"{role.value.title()}Agent"
         self.prompt_file = prompt_file
         self._prompt_cache: Optional[str] = None
+        self._logger = logging.getLogger(f"alphaagents.{self.__class__.__name__}")
 
     @abstractmethod
     async def analyze(
@@ -159,9 +168,68 @@ class BaseAgent(ABC):
         return self._prompt_cache
 
     def query_llm(self, variables: Dict[str, Any]) -> Dict[str, Any]:
-        """Deterministic stub for future LLM integration."""
+        """Query the configured LLM or fall back to a deterministic stub."""
 
         prompt_text = self.load_prompt()
+        try:
+            response = self._call_llm(prompt_text, variables)
+            if response:
+                return response
+        except Exception as exc:  # pragma: no cover - network-dependent
+            self._logger.warning("LLM call failed for %s: %s", self.name, exc)
+        return self._fallback_llm(prompt_text, variables)
+
+    # ------------------------------------------------------------------
+    # LLM helpers
+
+    _openai_client: Optional[Any] = None
+
+    @classmethod
+    def _get_openai_client(cls) -> Optional[Any]:
+        api_key = os.getenv("OPENAI_API_KEY")
+        if not api_key or OpenAI is None:
+            return None
+        if cls._openai_client is None:
+            cls._openai_client = OpenAI(api_key=api_key)
+        return cls._openai_client
+
+    def _call_llm(self, prompt_text: str, variables: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        client = self._get_openai_client()
+        if client is None:
+            return None
+
+        model = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+        user_content = json.dumps(variables, default=str)
+        completion = client.chat.completions.create(
+            model=model,
+            messages=[
+                {"role": "system", "content": prompt_text},
+                {"role": "user", "content": user_content},
+            ],
+            temperature=float(os.getenv("OPENAI_TEMPERATURE", "0.2")),
+        )
+
+        content = completion.choices[0].message.content or ""
+        parsed_score = self._extract_score(content)
+
+        return {
+            "content": content.strip(),
+            "score": parsed_score,
+            "prompt_excerpt": prompt_text.strip()[:120],
+            "raw_response": content,
+        }
+
+    def _extract_score(self, content: str) -> float:
+        try:
+            data = json.loads(content)
+            score = float(data.get("score", data.get("confidence", 0.5)))
+            if 0.0 <= score <= 1.0:
+                return round(score, 3)
+        except Exception:
+            pass
+        return 0.5
+
+    def _fallback_llm(self, prompt_text: str, variables: Dict[str, Any]) -> Dict[str, Any]:
         key = "|".join(
             f"{k}:{variables[k]}" for k in sorted(variables) if variables.get(k) is not None
         )
@@ -177,4 +245,6 @@ class BaseAgent(ABC):
             "content": content,
             "score": score,
             "prompt_excerpt": prompt_text.strip()[:120],
+            "raw_response": content,
+            "fallback": True,
         }

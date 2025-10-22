@@ -30,4 +30,5 @@ def test_query_llm_returns_deterministic_stub(tmp_path) -> None:
 
     assert first == second
     assert first["score"] == second["score"]
+    assert first.get("fallback") is True
     assert "[LLM:fundamental]" in first["content"]
