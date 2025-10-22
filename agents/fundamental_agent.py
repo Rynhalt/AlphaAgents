@@ -19,7 +19,11 @@ class FundamentalAgent(BaseAgent):
     """Produces deterministic reports using faux filings metadata."""
 
     def __init__(self) -> None:
-        super().__init__(role=AgentRole.FUNDAMENTAL, name="FundamentalAgent")
+        super().__init__(
+            role=AgentRole.FUNDAMENTAL,
+            name="FundamentalAgent",
+            prompt_file="prompts/fundamental.md",
+        )
         self._filings_cache: Dict[str, Dict[str, float]] = {
             "AAPL": {
                 "rev_growth_yoy": 0.06,
@@ -51,6 +55,8 @@ class FundamentalAgent(BaseAgent):
         risk_profile: Optional[str] = None,
     ) -> AgentReport:
         metrics = self._lookup_metrics(ticker)
+        llm_stub = self.query_llm({"ticker": ticker, "asof_date": asof_date.isoformat()})
+        metrics["llm_support_score"] = llm_stub["score"]
         decision = self._decide(metrics)
         rationale = self._build_rationale(ticker, metrics, decision)
 
@@ -62,14 +68,17 @@ class FundamentalAgent(BaseAgent):
             timestamp=datetime.combine(asof_date, datetime.min.time()),
         )
 
+        bullets = self._build_bullets(metrics)
+        bullets.append(f"LLM support score: {llm_stub['score']:.2f}")
+
         return AgentReport(
             ticker=ticker.upper(),
             asof_date=asof_date,
             role=self.role,
             decision=decision,
             confidence=self._confidence_from_metrics(metrics),
-            rationale=rationale,
-            bullets=self._build_bullets(metrics),
+            rationale=f"{rationale} | {llm_stub['content']}",
+            bullets=bullets,
             evidence_refs=[evidence],
             red_flags=self._detect_red_flags(metrics),
             metrics=metrics,

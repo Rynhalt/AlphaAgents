@@ -19,6 +19,8 @@ async def test_fundamental_agent_returns_buy_for_positive_metrics() -> None:
     assert report.decision is AgentDecision.BUY
     assert report.metrics["guidance_tone_score"] > 0
     assert "Revenue growth YoY" in report.bullets[0]
+    assert "llm_support_score" in report.metrics
+    assert "[LLM:fundamental]" in report.rationale
 
 
 @pytest.mark.asyncio
@@ -35,4 +37,3 @@ async def test_fundamental_agent_defaults_to_abstain() -> None:
     report = await agent.analyze("UNKNOWN", date(2024, 2, 1))
     assert report.decision is AgentDecision.ABSTAIN
     assert report.confidence <= 1.0
-
