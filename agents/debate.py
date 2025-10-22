@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 from collections import deque
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -12,6 +11,7 @@ from typing import Deque, Dict, Iterable, Iterator, List, Optional, Sequence
 from pydantic import BaseModel
 
 from agents.base_agent import AgentReport, AgentRole, BaseAgent
+from eval.reasoning_trace import ReasoningTraceEntry, ReasoningTraceLogger
 
 
 class DebateMessage(BaseModel):
@@ -32,6 +32,7 @@ class DebateEngine:
 
     max_rounds: int = 2
     trace_path: Path = Path("storage/reasoning_trace.jsonl")
+    trace_logger: Optional[ReasoningTraceLogger] = None
     turn_order: Sequence[AgentRole] = field(
         default_factory=lambda: (
             AgentRole.FUNDAMENTAL,
@@ -172,17 +173,19 @@ class DebateEngine:
     ) -> None:
         if not session_id:
             return
-        record = {
-            "session_id": session_id,
-            "timestamp": datetime.utcnow().isoformat(),
-            "agent_role": agent_role,
-            "stage": stage,
-            "variables": variables,
-            "result": result,
-        }
-        self.trace_path.parent.mkdir(parents=True, exist_ok=True)
-        with self.trace_path.open("a", encoding="utf-8") as handle:
-            handle.write(json.dumps(record, default=str) + "\n")
+        logger = self.trace_logger
+        if logger is None:
+            logger = ReasoningTraceLogger(self.trace_path)
+            self.trace_logger = logger
+        entry = ReasoningTraceEntry(
+            session_id=session_id,
+            timestamp=datetime.utcnow(),
+            agent_role=agent_role,
+            stage=stage,
+            variables=variables,
+            result=result,
+        )
+        logger.append(entry)
 
 
 def stream_messages(messages: Iterable[DebateMessage]) -> Iterator[str]:
