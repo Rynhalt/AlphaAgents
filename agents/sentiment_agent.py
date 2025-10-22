@@ -19,7 +19,11 @@ class SentimentAgent(BaseAgent):
     """Generates deterministic sentiment metrics using faux headline data."""
 
     def __init__(self) -> None:
-        super().__init__(role=AgentRole.SENTIMENT, name="SentimentAgent")
+        super().__init__(
+            role=AgentRole.SENTIMENT,
+            name="SentimentAgent",
+            prompt_file="prompts/sentiment.md",
+        )
         self._sentiment_cache: Dict[str, Dict[str, float]] = {
             "AAPL": {
                 "sentiment_score": 0.22,
@@ -51,6 +55,12 @@ class SentimentAgent(BaseAgent):
         risk_profile: Optional[str] = None,
     ) -> AgentReport:
         metrics = self._lookup_metrics(ticker)
+        llm_stub = self.query_llm({
+            "ticker": ticker,
+            "risk_profile": risk_profile,
+            "asof_date": asof_date.isoformat(),
+        })
+        metrics["llm_support_score"] = llm_stub["score"]
         decision = self._decide(metrics, risk_profile)
         rationale = self._build_rationale(ticker, metrics, decision)
 
@@ -62,14 +72,17 @@ class SentimentAgent(BaseAgent):
             timestamp=datetime.combine(asof_date, datetime.min.time()),
         )
         #Return fully populated report 
+        bullets = self._build_bullets(metrics)
+        bullets.append(f"LLM support score: {llm_stub['score']:.2f}")
+
         return AgentReport(
             ticker=ticker.upper(),
             asof_date=asof_date,
             role=self.role,
             decision=decision,
             confidence=self._confidence_from_metrics(metrics),
-            rationale=rationale,
-            bullets=self._build_bullets(metrics),
+            rationale=f"{rationale} | {llm_stub['content']}",
+            bullets=bullets,
             evidence_refs=[evidence],
             red_flags=self._detect_red_flags(metrics),
             metrics=metrics,

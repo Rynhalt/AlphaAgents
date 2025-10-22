@@ -17,6 +17,8 @@ async def test_sentiment_agent_buy_bias_for_positive_score() -> None:
     assert report.decision is AgentDecision.BUY
     assert report.metrics["sentiment_score"] > 0
     assert "Sentiment score" in report.bullets[0]
+    assert "llm_support_score" in report.metrics
+    assert "[LLM:sentiment]" in report.rationale
 
 
 @pytest.mark.asyncio
