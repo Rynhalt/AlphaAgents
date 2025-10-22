@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: alphaagents
+    env: python
+    runtime: python3.11
+    branch: main
+    autoDeploy: true
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHONUNBUFFERED
+        value: "1"
+    previews:
+      deployOnPullRequest: true
+      branch: main
+      buildCommand: pip install -r requirements.txt
+      startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT

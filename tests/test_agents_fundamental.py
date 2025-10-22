@@ -9,6 +9,8 @@ import pytest
 from agents.base_agent import AgentDecision
 from agents.fundamental_agent import FundamentalAgent
 
+#For now, the outputs from fundamental agents are deterministic, so it expects 
+# A specific output given a particular input
 
 @pytest.mark.asyncio
 async def test_fundamental_agent_returns_buy_for_positive_metrics() -> None:
