@@ -53,4 +53,4 @@ def test_query_llm_uses_openai_when_configured(monkeypatch):
 
     assert result["score"] == pytest.approx(0.87)
     assert "Mock summary" in result["content"]
-    assert "fallback" not in result
+    assert result["fallback"] is False

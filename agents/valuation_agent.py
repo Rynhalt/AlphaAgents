@@ -58,7 +58,7 @@ class ValuationAgent(BaseAgent):
             "asof_date": asof_date.isoformat(),
         })
         metrics["llm_support_score"] = llm_stub["score"]
-        metrics["llm_fallback"] = bool(llm_stub.get("fallback", False))
+        metrics["llm_fallback"] = 1.0 if llm_stub.get("fallback", False) else 0.0
         decision = self._decide(metrics)
         rationale = self._build_rationale(ticker, metrics, decision)
 

@@ -18,6 +18,7 @@ async def test_valuation_agent_buy_signal_with_positive_momentum() -> None:
     assert report.metrics["momo_63d"] > 0
     assert "63-day momentum" in report.bullets[0]
     assert "llm_support_score" in report.metrics
+    assert report.metrics["llm_fallback"] in {0.0, 1.0}
     assert "[LLM:valuation]" in report.rationale
 
 

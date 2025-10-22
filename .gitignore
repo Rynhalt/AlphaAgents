@@ -214,3 +214,4 @@ app/static/plots/*.png
 storage/portfolio_weights.csv
 storage/debate_log.jsonl
 storage/consensus.jsonl
+storage/reasoning_trace.jsonl

@@ -20,6 +20,7 @@ async def test_fundamental_agent_returns_buy_for_positive_metrics() -> None:
     assert report.metrics["guidance_tone_score"] > 0
     assert "Revenue growth YoY" in report.bullets[0]
     assert "llm_support_score" in report.metrics
+    assert report.metrics["llm_fallback"] in {0.0, 1.0}
     assert "[LLM:fundamental]" in report.rationale
 
 

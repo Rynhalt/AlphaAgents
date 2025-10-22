@@ -83,8 +83,13 @@ async def stream_debate(ticker: str, request: Request) -> StreamingResponse:
     asof = date.today()
     reports_list = await _gather_agent_reports(ticker, asof)
     reports = {report.role: report for report in reports_list}
+    agents_map = {
+        AgentRole.FUNDAMENTAL: fundamental_agent,
+        AgentRole.SENTIMENT: sentiment_agent,
+        AgentRole.VALUATION: valuation_agent,
+    }
     engine = DebateEngine()
-    messages = engine.run(reports)
+    messages = engine.run(agents_map, reports)
     generator = _sse_generator(messages)
     return StreamingResponse(generator, media_type="text/event-stream")
 
@@ -107,7 +112,12 @@ async def run_ticker(payload: RunTickerRequest) -> Dict[str, object]:
     reports_by_role = {report.role: report for report in reports}
 
     debate_engine = DebateEngine()
-    debate_messages = debate_engine.run(reports_by_role)
+    agents_map = {
+        AgentRole.FUNDAMENTAL: fundamental_agent,
+        AgentRole.SENTIMENT: sentiment_agent,
+        AgentRole.VALUATION: valuation_agent,
+    }
+    debate_messages = debate_engine.run(agents_map, reports_by_role, session_id=session_id)
 
     coordinator = Coordinator(risk_profile=payload.risk_profile)
     consensus = coordinator.aggregate(reports, ticker=ticker, asof_date=asof)

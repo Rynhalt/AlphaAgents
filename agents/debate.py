@@ -1,15 +1,17 @@
-"""Mock DebateEngine orchestrating critique-revision dialogue among agents."""
+"""DebateEngine orchestrating critique and revision rounds via LLM calls."""
 
 from __future__ import annotations
 
+import json
 from collections import deque
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Deque, Dict, Iterable, Iterator, List, Sequence
+from pathlib import Path
+from typing import Deque, Dict, Iterable, Iterator, List, Optional, Sequence
 
 from pydantic import BaseModel
 
-from agents.base_agent import AgentReport, AgentRole
+from agents.base_agent import AgentReport, AgentRole, BaseAgent
 
 
 class DebateMessage(BaseModel):
@@ -17,7 +19,10 @@ class DebateMessage(BaseModel):
 
     round: int
     agent: str
+    stage: str
     content: str
+    score: Optional[float] = None
+    fallback: bool = False
     timestamp: datetime
 
 
@@ -26,6 +31,7 @@ class DebateEngine:
     """Coordinates a two-round critique and revision loop."""
 
     max_rounds: int = 2
+    trace_path: Path = Path("storage/reasoning_trace.jsonl")
     turn_order: Sequence[AgentRole] = field(
         default_factory=lambda: (
             AgentRole.FUNDAMENTAL,
@@ -36,92 +42,147 @@ class DebateEngine:
 
     def run(
         self,
+        agents: Dict[AgentRole, BaseAgent],
         reports: Dict[AgentRole, AgentReport],
+        session_id: Optional[str] = None,
     ) -> List[DebateMessage]:
         """Perform a fixed number of critique rounds and collect messages."""
+
         if not reports:
             msg = "DebateEngine.run requires at least one AgentReport."
             raise ValueError(msg)
 
         messages: Deque[DebateMessage] = deque()
-        current_reports = reports.copy()
-
-        critiques_per_round: List[Dict[AgentRole, str]] = []
+        current_reports = {
+            role: report.model_copy(deep=True)
+            for role, report in reports.items()
+        }
 
         for round_index in range(1, self.max_rounds + 1):
-            critiques = self._run_critiques(round_index, current_reports)
-            critiques_per_round.append(critiques)
-            messages.extend(self._messages_from_critiques(round_index, critiques))
+            critique_messages = []
+            for role in self.turn_order:
+                agent = agents.get(role)
+                report = current_reports.get(role)
+                if not agent or not report:
+                    continue
+                peer_reports = {
+                    peer_role.value: peer_report.model_dump()
+                    for peer_role, peer_report in current_reports.items()
+                    if peer_role != role
+                }
+                variables = {
+                    "stage": "critique",
+                    "round": round_index,
+                    "agent_role": role.value,
+                    "ticker": report.ticker,
+                    "agent_report": report.model_dump(),
+                    "peer_reports": peer_reports,
+                    "previous_messages": [msg.model_dump() for msg in messages],
+                }
+                llm_result = agent.query_llm(variables)
+                critique_message = DebateMessage(
+                    round=round_index,
+                    agent=role.value,
+                    stage="critique",
+                    content=llm_result["content"],
+                    score=llm_result.get("score"),
+                    fallback=bool(llm_result.get("fallback", False)),
+                    timestamp=datetime.utcnow(),
+                )
+                messages.append(critique_message)
+                critique_messages.append((role, critique_message, llm_result, variables))
+                self._log_trace(session_id, role.value, "critique", variables, llm_result)
 
             if round_index >= self.max_rounds:
                 break
 
             current_reports = self._apply_revisions(
                 round_index,
+                agents,
                 current_reports,
-                critiques,
+                critique_messages,
                 messages,
+                session_id,
             )
 
         return list(messages)
 
-    def _run_critiques(
-        self,
-        round_index: int,
-        reports: Dict[AgentRole, AgentReport],
-    ) -> Dict[AgentRole, str]:
-        critiques: Dict[AgentRole, str] = {}
-        for role in self.turn_order:
-            report = reports.get(role)
-            if not report:
-                continue
-            peer_reports = {peer_role: r for peer_role, r in reports.items() if peer_role != role}
-            critiques[role] = (
-                f"{role.value} critique round {round_index}: "
-                f"confidence {report.confidence:.2f}, peers {[p.value for p in peer_reports]}."
-            )
-        return critiques
-
-    def _messages_from_critiques(
-        self,
-        round_index: int,
-        critiques: Dict[AgentRole, str],
-    ) -> Iterable[DebateMessage]:
-        timestamp = datetime.utcnow()
-        for role, content in critiques.items():
-            yield DebateMessage(
-                round=round_index,
-                agent=role.value,
-                content=content,
-                timestamp=timestamp,
-            )
-
     def _apply_revisions(
         self,
         round_index: int,
+        agents: Dict[AgentRole, BaseAgent],
         reports: Dict[AgentRole, AgentReport],
-        critiques: Dict[AgentRole, str],
+        critiques: List,
         messages: Deque[DebateMessage],
+        session_id: Optional[str],
     ) -> Dict[AgentRole, AgentReport]:
         updated_reports: Dict[AgentRole, AgentReport] = {}
+        critiques_by_role: Dict[AgentRole, List[DebateMessage]] = {
+            role: [] for role in self.turn_order
+        }
+        for role, message, _, _ in critiques:
+            for target_role in critiques_by_role:
+                if target_role != role:
+                    critiques_by_role[target_role].append(message)
+
         for role, report in reports.items():
-            critique_messages = [critique for agent, critique in critiques.items() if agent != role]
-            revised = report.model_copy()
-            if critique_messages:
-                revised.rationale = (
-                    f"{report.rationale} | Round {round_index} feedback considered."
-                )
-            updated_reports[role] = revised
-            timestamp = datetime.utcnow()
-            messages.append(
-                DebateMessage(
-                    round=round_index,
-                    agent=f"{role.value}-revision",
-                    content=f"{role.value} revised their rationale.",
-                    timestamp=timestamp,
-                )
+            agent = agents.get(role)
+            if not agent:
+                updated_reports[role] = report
+                continue
+            critique_messages = critiques_by_role.get(role, [])
+            variables = {
+                "stage": "revision",
+                "round": round_index,
+                "agent_role": role.value,
+                "ticker": report.ticker,
+                "original_report": report.model_dump(),
+                "critiques": [
+                    {"agent": msg.agent, "content": msg.content}
+                    for msg in critique_messages
+                ],
+            }
+            llm_result = agent.query_llm(variables)
+            revised_report = report.model_copy(deep=True)
+            revised_report.rationale = llm_result["content"]
+            revised_report.metrics["llm_revision_score"] = llm_result.get("score", 0.0)
+            revised_report.metrics["llm_revision_fallback"] = 1.0 if llm_result.get("fallback", False) else 0.0
+            revision_message = DebateMessage(
+                round=round_index,
+                agent=role.value,
+                stage="revision",
+                content=llm_result["content"],
+                score=llm_result.get("score"),
+                fallback=bool(llm_result.get("fallback", False)),
+                timestamp=datetime.utcnow(),
             )
+            messages.append(revision_message)
+            self._log_trace(session_id, role.value, "revision", variables, llm_result)
+            updated_reports[role] = revised_report
+
         return updated_reports
+
+    def _log_trace(
+        self,
+        session_id: Optional[str],
+        agent_role: str,
+        stage: str,
+        variables: Dict,
+        result: Dict,
+    ) -> None:
+        if not session_id:
+            return
+        record = {
+            "session_id": session_id,
+            "timestamp": datetime.utcnow().isoformat(),
+            "agent_role": agent_role,
+            "stage": stage,
+            "variables": variables,
+            "result": result,
+        }
+        self.trace_path.parent.mkdir(parents=True, exist_ok=True)
+        with self.trace_path.open("a", encoding="utf-8") as handle:
+            handle.write(json.dumps(record, default=str) + "\n")
 
 
 def stream_messages(messages: Iterable[DebateMessage]) -> Iterator[str]:
