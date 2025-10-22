@@ -63,7 +63,13 @@ async def run_consensus(ticker: str, risk_profile: str = "risk_neutral") -> Dict
     asof = date.today()
     reports = await _gather_agent_reports(ticker, asof, risk_profile=risk_profile)
     coordinator = Coordinator(risk_profile=risk_profile)
-    consensus = coordinator.aggregate(reports, ticker=ticker, asof_date=asof)
+    consensus = coordinator.aggregate(
+        reports,
+        ticker=ticker,
+        asof_date=asof,
+        debate_messages=[],
+        backtest={},
+    )
     return {
         "ticker": ticker.upper(),
         "consensus": consensus.model_dump(),
@@ -119,8 +125,17 @@ async def run_ticker(payload: RunTickerRequest) -> Dict[str, object]:
     }
     debate_messages = debate_engine.run(agents_map, reports_by_role, session_id=session_id)
 
+    backtest_result: Dict[str, float] = {}
+
     coordinator = Coordinator(risk_profile=payload.risk_profile)
-    consensus = coordinator.aggregate(reports, ticker=ticker, asof_date=asof)
+    consensus = coordinator.aggregate(
+        reports,
+        ticker=ticker,
+        asof_date=asof,
+        debate_messages=[msg.model_dump() for msg in debate_messages],
+        backtest=backtest_result,
+        session_id=session_id,
+    )
 
     decisions = {ticker: consensus.final_decision.value}
     weights = equal_weight_selection(decisions)

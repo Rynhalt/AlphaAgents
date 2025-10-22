@@ -44,6 +44,7 @@ class AgentRole(StrEnum):
     FUNDAMENTAL = "fundamental"
     SENTIMENT = "sentiment"
     VALUATION = "valuation"
+    COORDINATOR = "coordinator"
 
 
 class AgentDecision(StrEnum):
@@ -102,6 +103,9 @@ class Consensus(BaseModel):
     explanation: str
     consolidated_evidence: List[EvidenceRef] = Field(default_factory=list)
     per_role: Dict[AgentRole, AgentReport] = Field(default_factory=dict)
+    explanation_llm: str = ""
+    explanation_points: List[str] = Field(default_factory=list)
+    metrics: Dict[str, float] = Field(default_factory=dict)
 
     @field_validator("final_decision")
     @classmethod

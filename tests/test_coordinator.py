@@ -48,12 +48,22 @@ def test_coordinator_majority_buy() -> None:
         _make_report(AgentRole.VALUATION, AgentDecision.SELL, 0.6),
     ]
     coordinator = Coordinator(risk_profile="risk_neutral")
-    consensus = coordinator.aggregate(reports, ticker="AAPL")
+    consensus = coordinator.aggregate(
+        reports,
+        ticker="AAPL",
+        debate_messages=[{"agent": "sentiment", "content": "test"}],
+        backtest={"sharpe": 1.0},
+    )
 
     assert consensus.final_decision is AgentDecision.BUY
     assert consensus.conviction == pytest.approx(0.75, abs=1e-6)
     assert consensus.per_role[AgentRole.FUNDAMENTAL].decision is AgentDecision.BUY
     assert consensus.consolidated_evidence, "Expected evidence from winning side"
+    assert consensus.explanation_llm
+    assert "llm_explanation_score" in consensus.metrics
+    assert "llm_explanation_fallback" in consensus.metrics
+    assert "llm_explanation_score" in consensus.metrics
+    assert "llm_explanation_fallback" in consensus.metrics
 
 
 def test_coordinator_tie_break_risk_neutral() -> None:
@@ -90,4 +100,3 @@ def test_coordinator_requires_unique_roles() -> None:
     coordinator = Coordinator()
     with pytest.raises(ValueError):
         coordinator.aggregate(reports, ticker="AAPL")
-

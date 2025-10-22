@@ -2,18 +2,22 @@
 
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, datetime
+from pathlib import Path
 from statistics import mean
-from typing import Iterable, List, Sequence
+from typing import Any, Dict, Iterable, List, Optional, Sequence
 
 from agents.base_agent import (
     AgentDecision,
     AgentReport,
     AgentRole,
+    BaseAgent,
     Consensus,
     EvidenceRef,
 )
+from eval.reasoning_trace import ReasoningTraceEntry, ReasoningTraceLogger
 
 
 @dataclass
@@ -21,21 +25,24 @@ class Coordinator:
     """Compute consensus decisions from individual agent reports."""
 
     risk_profile: str = "risk_neutral"
+    trace_logger: Optional[ReasoningTraceLogger] = None
+    prompt_file: str = "prompts/coordinator.md"
 
     def aggregate(
         self,
         reports: Sequence[AgentReport],
         ticker: str,
         asof_date: date | None = None,
+        debate_messages: Sequence[Dict[str, str]] | None = None,
+        backtest: Dict[str, float] | None = None,
+        session_id: str | None = None,
     ) -> Consensus:
         if not reports:
-            msg = "Coordinator requires at least one AgentReport."
-            raise ValueError(msg)
+            raise ValueError("Coordinator requires at least one AgentReport.")
 
         per_role = {report.role: report for report in reports}
         if len(per_role) != len(reports):
-            msg = "Duplicate agent roles detected when computing consensus."
-            raise ValueError(msg)
+            raise ValueError("Duplicate agent roles detected when computing consensus.")
 
         buy_reports = [report for report in reports if report.decision is AgentDecision.BUY]
         sell_reports = [report for report in reports if report.decision is AgentDecision.SELL]
@@ -48,7 +55,20 @@ class Coordinator:
         first_report = reports[0]
         consensus_date = asof_date or first_report.asof_date
 
-        return Consensus(
+        llm_payload = self._llm_explanation(
+            reports=list(per_role.values()),
+            debate_messages=debate_messages or [],
+            backtest=backtest or {},
+            final_decision=final_decision.value,
+            session_id=session_id,
+        )
+
+        metrics = {
+            "llm_explanation_score": llm_payload.get("confidence", 0.0),
+            "llm_explanation_fallback": 1.0 if llm_payload.get("fallback", False) else 0.0,
+        }
+
+        consensus = Consensus(
             ticker=ticker.upper(),
             asof_date=consensus_date,
             final_decision=final_decision,
@@ -57,6 +77,10 @@ class Coordinator:
             consolidated_evidence=evidence,
             per_role=per_role,
         )
+        consensus.explanation_llm = llm_payload.get("explanation", "")
+        consensus.explanation_points = llm_payload.get("key_points", [])
+        consensus.metrics.update(metrics)
+        return consensus
 
     def _resolve_decision(
         self,
@@ -128,3 +152,70 @@ class Coordinator:
             if len(evidence) >= 5:
                 break
         return evidence[:5]
+
+    def _llm_explanation(
+        self,
+        reports: List[AgentReport],
+        debate_messages: Sequence[Dict[str, str]],
+        backtest: Dict[str, float],
+        final_decision: str,
+        session_id: Optional[str],
+    ) -> Dict[str, Any]:
+        coordinator_agent = CoordinatorAgent(prompt_file=self.prompt_file)
+        variables = {
+            "final_decision": final_decision,
+            "reports": [report.model_dump() for report in reports],
+            "debate_messages": list(debate_messages),
+            "backtest": backtest,
+        }
+        raw_result = coordinator_agent.query_llm(variables)
+        parsed = self._parse_llm_payload(raw_result)
+        if session_id:
+            logger = self.trace_logger or ReasoningTraceLogger(Path("storage/reasoning_trace.jsonl"))
+            self.trace_logger = logger
+            logger.append(
+                ReasoningTraceEntry(
+                    session_id=session_id,
+                    agent_role="coordinator",
+                    stage="explanation",
+                    timestamp=datetime.utcnow(),
+                    variables=variables,
+                    result=parsed,
+                )
+            )
+        return parsed
+
+    def _parse_llm_payload(self, raw: Dict[str, Any]) -> Dict[str, Any]:
+        content = raw.get("content", "")
+        fallback = bool(raw.get("fallback", False))
+        confidence = raw.get("score")
+        try:
+            data = json.loads(content)
+            explanation = data.get("explanation", content)
+            key_points = data.get("key_points", [])
+            confidence = data.get("confidence", confidence)
+        except Exception:
+            explanation = content
+            key_points = []
+            fallback = fallback or True
+        return {
+            "explanation": explanation,
+            "key_points": key_points,
+            "confidence": confidence or 0.0,
+            "fallback": fallback,
+            "raw_response": content,
+        }
+
+
+class CoordinatorAgent(BaseAgent):
+    def __init__(self, prompt_file: str):
+        super().__init__(role=AgentRole.COORDINATOR, prompt_file=prompt_file)
+
+    async def analyze(self, ticker: str, asof_date: date, risk_profile: str | None = None):
+        raise NotImplementedError
+
+    async def critique(self, target_report: AgentReport, peer_reports):
+        raise NotImplementedError
+
+    async def revise(self, original_report: AgentReport, critiques):
+        raise NotImplementedError
