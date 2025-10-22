@@ -11,6 +11,7 @@ from typing import Deque, Dict, Iterable, Iterator, List, Optional, Sequence
 from pydantic import BaseModel
 
 from agents.base_agent import AgentReport, AgentRole, BaseAgent
+from data.indices.retriever import MockRetriever, default_retriever
 from eval.reasoning_trace import ReasoningTraceEntry, ReasoningTraceLogger
 
 
@@ -33,6 +34,7 @@ class DebateEngine:
     max_rounds: int = 2
     trace_path: Path = Path("storage/reasoning_trace.jsonl")
     trace_logger: Optional[ReasoningTraceLogger] = None
+    retriever: MockRetriever = field(default_factory=lambda: default_retriever)
     turn_order: Sequence[AgentRole] = field(
         default_factory=lambda: (
             AgentRole.FUNDAMENTAL,
@@ -71,6 +73,9 @@ class DebateEngine:
                     for peer_role, peer_report in current_reports.items()
                     if peer_role != role
                 }
+                context = self.retriever.search(
+                    f"{report.ticker} {role.value} critique round {round_index}"
+                )
                 variables = {
                     "stage": "critique",
                     "round": round_index,
@@ -79,6 +84,7 @@ class DebateEngine:
                     "agent_report": report.model_dump(),
                     "peer_reports": peer_reports,
                     "previous_messages": [msg.model_dump() for msg in messages],
+                    "context": context,
                 }
                 llm_result = agent.query_llm(variables)
                 critique_message = DebateMessage(
@@ -132,6 +138,9 @@ class DebateEngine:
                 updated_reports[role] = report
                 continue
             critique_messages = critiques_by_role.get(role, [])
+            context = self.retriever.search(
+                f"{report.ticker} {role.value} revision round {round_index}"
+            )
             variables = {
                 "stage": "revision",
                 "round": round_index,
@@ -142,6 +151,7 @@ class DebateEngine:
                     {"agent": msg.agent, "content": msg.content}
                     for msg in critique_messages
                 ],
+                "context": context,
             }
             llm_result = agent.query_llm(variables)
             revised_report = report.model_copy(deep=True)

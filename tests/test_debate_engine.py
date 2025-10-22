@@ -57,6 +57,8 @@ class MockAgent(BaseAgent):
     def query_llm(self, variables):  # type: ignore[override]
         stage = variables["stage"]
         round_index = variables["round"]
+        assert "context" in variables
+        assert len(variables["context"]) > 0
         return {
             "content": f"{self.role.value}-{stage}-round{round_index}",
             "score": 0.9,
