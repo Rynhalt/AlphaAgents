@@ -24,13 +24,7 @@ This guide gives product reviewers a quick tour of the prototype and explains ho
    ```bash
    python -m dotenv run -- uvicorn app.main:app --reload
    ```
-4. Kick off a debate to populate the plots and consensus data:
-   ```bash
-   curl -s -X POST http://127.0.0.1:8000/run_ticker \
-        -H "Content-Type: application/json" \
-        -d '{"ticker": "AAPL", "risk_profile": "risk_neutral"}' | jq
-   ```
-5. Visit `http://127.0.0.1:8000/`, hard-refresh, and press **Start Session** to watch the debate playback, inspect the reasoning trace, and view the generated plots under *Backtest Metrics*.
+4. Visit `http://127.0.0.1:8000/`, hard-refresh, and press **Start Session**. That single click runs the full pipeline (LLM fallbacks if `OPENAI_API_KEY` is missing), populates the debate log, and regenerates the Matplotlib charts. No manual `curl` call is needed unless you want to script the demo.
 
 ## Demo Assets (placeholders)
 
@@ -38,9 +32,11 @@ Store captured media under `docs/media/` and update the table below with actual 
 
 | Asset | Description |
 |-------|-------------|
-| `docs/media/run-ticker-session.mp4` | Screen recording of starting a session, watching the debate, and revealing the trace. |
-| `docs/media/dashboard-overview.png` | Screenshot of the landing page after a completed session. |
-| `docs/media/backtest-plots.png` | Screenshot highlighting the Matplotlib charts. |
+| `docs/media/start-session-demo.mp4` | Recording that shows clicking **Start Session** and the “Analysing…” phase. |
+| `docs/media/results-walkthrough.mp4` | Recording that walks through the debate playback, reasoning trace toggle, and coordinator summary. |
+| `docs/media/plot-cumulative.png` | Screenshot of the cumulative return plot. |
+| `docs/media/plot-rolling-sharpe.png` | Screenshot of the rolling Sharpe plot. |
+| `docs/media/plot-drawdown.png` | Screenshot of the drawdown profile. |
 
 ## Known Limitations
 
@@ -54,4 +50,3 @@ Store captured media under `docs/media/` and update the table below with actual 
 - Replace mock data with live filings/news/prices once data connectors are enabled.
 - Improve the front-end to render agent dialogue with richer formatting.
 - Automate regeneration of demo assets whenever major UI changes ship.
-
