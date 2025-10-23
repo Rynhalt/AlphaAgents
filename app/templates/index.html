@@ -85,6 +85,7 @@
         const tickerInput = document.getElementById("ticker-input");
         const riskInput = document.getElementById("risk-input");
         const log = document.getElementById("debate-log");
+        const submitButton = form.querySelector("button[type='submit']");
         const statusBadge = document.getElementById("status");
         const consensusDecision = document.getElementById("consensus-decision");
         const toggleExplanationButton = document.getElementById("toggle-explanation");
@@ -101,6 +102,8 @@
         const plotsGrid = document.getElementById("plots-grid");
         const backtestSummary = document.getElementById("backtest-summary");
 
+        const defaultButtonLabel = submitButton ? submitButton.textContent : "Start Session";
+        let inFlight = false;
         let explanationVisible = false;
         let traceVisible = false;
         let debateTimer = null;
@@ -315,6 +318,14 @@ ${JSON.stringify(entry.result, null, 2)}
 
         form.addEventListener("submit", async (event) => {
           event.preventDefault();
+          if (inFlight) {
+            return;
+          }
+          inFlight = true;
+          if (submitButton) {
+            submitButton.disabled = true;
+            submitButton.textContent = "Running…";
+          }
           resetInterface();
 
           const ticker = tickerInput.value.trim() || "AAPL";
@@ -328,7 +339,11 @@ ${JSON.stringify(entry.result, null, 2)}
               body: JSON.stringify({ ticker, risk_profile: riskProfile }),
             });
             if (!response.ok) {
-              throw new Error("Failed to start session");
+              const message =
+                response.status === 429
+                  ? "Another session is already running. Please wait."
+                  : "Failed to start session";
+              throw new Error(message);
             }
 
             const data = await response.json();
@@ -342,6 +357,13 @@ ${JSON.stringify(entry.result, null, 2)}
           } catch (error) {
             setStatus("Error", "error");
             console.error(error);
+            consensusDecision.textContent = error?.message ?? "Request failed.";
+          } finally {
+            inFlight = false;
+            if (submitButton) {
+              submitButton.disabled = false;
+              submitButton.textContent = defaultButtonLabel;
+            }
           }
         });
       })();

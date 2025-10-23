@@ -38,6 +38,7 @@ valuation_agent = ValuationAgent()
 static_plot_dir = BASE_DIR / "static" / "plots"
 storage_dir = Path("storage")
 trace_logger = ReasoningTraceLogger(storage_dir / "reasoning_trace.jsonl")
+run_ticker_lock = asyncio.Lock()
 
 
 @app.get("/health")
@@ -110,68 +111,75 @@ class RunTickerRequest(BaseModel):
 @app.post("/run_ticker")
 async def run_ticker(payload: RunTickerRequest) -> Dict[str, object]:
     """Execute full AlphaAgents pipeline and return aggregated outputs."""
+    if run_ticker_lock.locked():
+        raise HTTPException(
+            status_code=429,
+            detail="Another debate session is already running. Please wait for it to finish.",
+        )
+
     ticker = payload.ticker.strip().upper()
     if not ticker:
         raise HTTPException(status_code=400, detail="Ticker is required.")
 
-    session_id = str(uuid4())
-    asof = date.today()
-    reports = await _gather_agent_reports(ticker, asof, risk_profile=payload.risk_profile)
-    reports_by_role = {report.role: report for report in reports}
+    async with run_ticker_lock:
+        session_id = str(uuid4())
+        asof = date.today()
+        reports = await _gather_agent_reports(ticker, asof, risk_profile=payload.risk_profile)
+        reports_by_role = {report.role: report for report in reports}
 
-    debate_engine = DebateEngine()
-    agents_map = {
-        AgentRole.FUNDAMENTAL: fundamental_agent,
-        AgentRole.SENTIMENT: sentiment_agent,
-        AgentRole.VALUATION: valuation_agent,
-    }
-    debate_messages = debate_engine.run(agents_map, reports_by_role, session_id=session_id)
+        debate_engine = DebateEngine()
+        agents_map = {
+            AgentRole.FUNDAMENTAL: fundamental_agent,
+            AgentRole.SENTIMENT: sentiment_agent,
+            AgentRole.VALUATION: valuation_agent,
+        }
+        debate_messages = debate_engine.run(agents_map, reports_by_role, session_id=session_id)
 
-    coordinator = Coordinator(risk_profile=payload.risk_profile)
+        coordinator = Coordinator(risk_profile=payload.risk_profile)
 
-    buy_reports = [report for report in reports if report.decision is AgentDecision.BUY]
-    sell_reports = [report for report in reports if report.decision is AgentDecision.SELL]
-    pre_decision = coordinator._resolve_decision(buy_reports, sell_reports)
+        buy_reports = [report for report in reports if report.decision is AgentDecision.BUY]
+        sell_reports = [report for report in reports if report.decision is AgentDecision.SELL]
+        pre_decision = coordinator._resolve_decision(buy_reports, sell_reports)
 
-    decisions = {ticker: pre_decision.value}
-    weights = equal_weight_selection(decisions)
-    returns = {ticker: _generate_mock_returns(ticker)}
+        decisions = {ticker: pre_decision.value}
+        weights = equal_weight_selection(decisions)
+        returns = {ticker: _generate_mock_returns(ticker)}
 
-    backtest_result = run_backtest(
-        weights,
-        returns,
-        storage_dir=storage_dir,
-        plot_dir=static_plot_dir,
-    )
+        backtest_result = run_backtest(
+            weights,
+            returns,
+            storage_dir=storage_dir,
+            plot_dir=static_plot_dir,
+        )
 
-    consensus = coordinator.aggregate(
-        reports,
-        ticker=ticker,
-        asof_date=asof,
-        debate_messages=[msg.model_dump() for msg in debate_messages],
-        backtest=backtest_result,
-        session_id=session_id,
-    )
+        consensus = coordinator.aggregate(
+            reports,
+            ticker=ticker,
+            asof_date=asof,
+            debate_messages=[msg.model_dump() for msg in debate_messages],
+            backtest=backtest_result,
+            session_id=session_id,
+        )
 
-    plot_urls = {
-        name: f"/static/plots/{Path(path).name}"
-        for name, path in backtest_result.get("plots", {}).items()
-    }
-    backtest_payload = {**backtest_result, "plots": plot_urls}
+        plot_urls = {
+            name: f"/static/plots/{Path(path).name}"
+            for name, path in backtest_result.get("plots", {}).items()
+        }
+        backtest_payload = {**backtest_result, "plots": plot_urls}
 
-    _log_consensus(consensus.model_dump(), session_id)
-    _log_debate(debate_messages, session_id)
+        _log_consensus(consensus.model_dump(), session_id)
+        _log_debate(debate_messages, session_id)
 
-    response = {
-        "session_id": session_id,
-        "ticker": ticker,
-        "risk_profile": payload.risk_profile,
-        "consensus": consensus.model_dump(),
-        "reports": [report.model_dump() for report in reports],
-        "debate": [message.model_dump() for message in debate_messages],
-        "backtest": backtest_payload,
-    }
-    return response
+        response = {
+            "session_id": session_id,
+            "ticker": ticker,
+            "risk_profile": payload.risk_profile,
+            "consensus": consensus.model_dump(),
+            "reports": [report.model_dump() for report in reports],
+            "debate": [message.model_dump() for message in debate_messages],
+            "backtest": backtest_payload,
+        }
+        return response
 
 
 def _sse_generator(messages: Iterable) -> Iterable[str]:
