@@ -10,17 +10,17 @@ The paper sketches a debate-driven ensemble of domain agents (fundamental, senti
 
   ## Features 
 
-  - LLM-driven agents for fundamental, sentiment, and valuation analysis—each generates structured reports (decision, confidence, rationale,
+  - 🤖 LLM-driven agents for fundamental, sentiment, and valuation analysis—each generates structured reports (decision, confidence, rationale,
     metrics) with OpenAI fallback.
-  - Debate engine runs two critique/revision rounds, streams messages via SSE, and logs every prompt/response to storage/
+  - 🧠 Debate engine runs two critique/revision rounds, streams messages via SSE, and logs every prompt/response to storage/
     reasoning_trace.jsonl.
-  - Coordinator synthesizes the final consensus (majority vote + tie-breaker) and, when the key is available, calls the LLM for a narrative
+  - 🧮 Coordinator synthesizes the final consensus (majority vote + tie-breaker) and, when the key is available, calls the LLM for a narrative
     and bullet points; falls back gracefully otherwise.
-  - Portfolio backtester builds equal-weight portfolios off the consensus, runs a mock return simulation, and saves Matplotlib plots
+  - 📈 Portfolio backtester builds equal-weight portfolios off the consensus, runs a mock return simulation, and saves Matplotlib plots
     (cumulative_return.png, rolling_sharpe.png).
-  - **Matplotlib-powered dashboards** regenerate cumulative return, rolling Sharpe, and drawdown charts for each session and serve them
+  - 🎨 **Matplotlib-powered dashboards** regenerate cumulative return, rolling Sharpe, and drawdown charts for each session and serve them
     through the FastAPI static assets.
-  - Front-end (FastAPI + Jinja) includes risk-profile selection, color-coded live debate stream, collapsible coordinator insights, reasoning
+  - 💻 Front-end (FastAPI + Jinja) includes risk-profile selection, color-coded live debate stream, collapsible coordinator insights, reasoning
     trace viewer, and auto-refreshing plots.
 
   👉 **Want a quick tour?** Check out [DEMO.md](DEMO.md) for screenshots, screen recordings, and instructions on replaying the demo locally or via the Render preview link.
