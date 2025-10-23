@@ -190,7 +190,7 @@ The paper sketches a debate-driven ensemble of domain agents (fundamental, senti
     backtester.
 
     
-# Personal Background / Motivation
+# 🏦👾Personal Background / Motivation🍣🛸
 
 Recently, I completed a software engineer internship at an investment bank, and was exposed to equity systems and how technology really intersects with financial markets - and then I heard about this paper.
 
