@@ -1,0 +1,16 @@
+[
+  {
+    "id": "AAPL-news-001",
+    "title": "Analysts boost Apple targets after iPhone launch",
+    "date": "2023-09-15",
+    "source": "news",
+    "content": "Major brokerages raised price targets following strong preorder data for the latest iPhone. Analysts cited resilient demand in China and accelerating services attach rates."
+  },
+  {
+    "id": "AAPL-news-002",
+    "title": "EU inquiry into App Store practices",
+    "date": "2023-06-20",
+    "source": "news",
+    "content": "European regulators opened an inquiry into App Store competition policies, raising potential compliance costs but noting Apple's cooperation and prior remedial actions."
+  }
+]

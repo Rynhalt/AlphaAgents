@@ -1,42 +1,67 @@
-"""Simple mock retriever returning context snippets for prompts."""
+"""Mock retriever that loads structured snippets for filings, news, and prices."""
 
 from __future__ import annotations
 
+import json
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 
 @dataclass
 class MockRetriever:
-    """Keyword-based retriever over a small mock corpus."""
+    """Keyword-based retrieval over ticker-specific JSON snippets."""
 
-    corpus_paths: Dict[str, Path] = field(
-        default_factory=lambda: {
-            "filing": Path("data/mock/filings.txt"),
-            "news": Path("data/mock/news.txt"),
-            "price": Path("data/mock/prices.txt"),
-        }
-    )
+    root: Path = Path("data/mock")
+    cache: Dict[str, List[Dict[str, str]]] = field(default_factory=dict)
 
-    def search(self, query: str, k: int = 3) -> List[Dict[str, str]]:
+    def _load_corpus(self, ticker: str) -> List[Dict[str, str]]:
+        ticker = ticker.upper()
+        if ticker in self.cache:
+            return self.cache[ticker]
+
+        snippets: List[Dict[str, str]] = []
+        ticker_dir = self.root / ticker
+        if not ticker_dir.exists():
+            self.cache[ticker] = snippets
+            return snippets
+
+        for path in ticker_dir.glob("*.json"):
+            source = path.stem  # filings / news / prices
+            try:
+                data = json.loads(path.read_text(encoding="utf-8"))
+            except json.JSONDecodeError:
+                continue
+            for item in data:
+                snippets.append(
+                    {
+                        "id": item.get("id", ""),
+                        "title": item.get("title", ""),
+                        "date": item.get("date", ""),
+                        "source": item.get("source", source),
+                        "content": item.get("content", ""),
+                    }
+                )
+
+        self.cache[ticker] = snippets
+        return snippets
+
+    def search(self, query: str, ticker: Optional[str] = None, k: int = 3) -> List[Dict[str, str]]:
+        """Return top-k snippets matching the query."""
         query_lower = query.lower()
         candidates: List[Dict[str, str]] = []
-        for source, path in self.corpus_paths.items():
-            if not path.exists():
-                continue
-            with path.open("r", encoding="utf-8") as handle:
-                for line in handle:
-                    text = line.strip()
-                    if not text:
-                        continue
-                    score = self._score(query_lower, text)
-                    candidates.append({
-                        "source": source,
-                        "content": text,
-                        "score": score,
-                    })
+
+        tickers = [ticker.upper()] if ticker else [d.name for d in self.root.iterdir() if d.is_dir()]
+
+        for tkr in tickers:
+            for snippet in self._load_corpus(tkr):
+                score = self._score(query_lower, snippet["content"])
+                if score > 0:
+                    candidate = dict(snippet)
+                    candidate["ticker"] = tkr
+                    candidate["score"] = score
+                    candidates.append(candidate)
 
         candidates.sort(key=lambda item: item["score"], reverse=True)
         return candidates[:k]
@@ -45,7 +70,8 @@ class MockRetriever:
         words = re.findall(r"[a-z0-9]+", query)
         if not words:
             return 0.0
-        hits = sum(word in text.lower() for word in words)
+        lower = text.lower()
+        hits = sum(word in lower for word in words)
         return hits / len(words)
 
 

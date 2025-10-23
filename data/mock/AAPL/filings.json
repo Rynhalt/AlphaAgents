@@ -1,0 +1,16 @@
+[
+  {
+    "id": "AAPL-10K-2023",
+    "title": "Apple Inc. 2023 Form 10-K",
+    "date": "2023-10-27",
+    "source": "filing",
+    "content": "Apple reported double-digit services growth and resilient hardware margins despite FX headwinds. Guidance highlighted demand strength across iPhone and Mac segments."
+  },
+  {
+    "id": "AAPL-10Q-2023-Q3",
+    "title": "Apple Inc. Q3 2023 Form 10-Q",
+    "date": "2023-07-28",
+    "source": "filing",
+    "content": "Quarterly results reflected solid operating leverage with gross margin expansion of 80 bps. Management noted normalization of supply chain and stable channel inventories."
+  }
+]
