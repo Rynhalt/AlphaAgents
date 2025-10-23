@@ -38,7 +38,7 @@ This is a personal project developed by Marcus Izumi, in an attempt to implement
                                 │
                                 │ HTTP requests (POST /run_ticker, GET /stream/{ticker}, etc.)
                                 │
-  ┌─────────────────────────────┴────────────────────────────┐
+  ┌─────────────────────────────┴──────────────────────-──────┐
   │                    FastAPI Application                    │
   │                     (app/main.py)                         │
   │                                                           │
@@ -48,11 +48,11 @@ This is a personal project developed by Marcus Izumi, in an attempt to implement
   │         │ POST JSON              │ GET                    │
   │         │                        │                        │
   │         ▼                        ▼                        │
-  │   ┌───────────────┐       ┌────────────┐                  │
+  │   ┌───────────────┐       ┌───────────-─┐                 │
   │   │ DebateEngine  │       │ Coordinator │                 │
   │   │ (critique +   │       │ (final vote │                 │
   │   │ revisions,    │       │ + LLM expl.)│                 │
-  │   │ SSE streaming)│       └─────┬──────┘                  │
+  │   │ SSE streaming)│       └─────┬───-───┘                 │
   │   └────┬──────────┘             │                         │
   │        │                        │ Consensus object        │
   │        │ SSE events             │ (decision, rationale,   │
@@ -67,12 +67,12 @@ This is a personal project developed by Marcus Izumi, in an attempt to implement
   │   └─────┬─────────────┘ └───────┬────────┘                │
   │         │ inputs                │ outputs                 │
   │         ▼                       ▼                         │
-  │   ┌──────────────┐   ┌──────────────────┐   ┌─────────────┐│
-  │   │ data/mock/   │   │ storage/         │   │ app/static/ ││
-  │   │ structured   │   │ consensus.jsonl  │   │ plots/*.png ││
-  │   │ snippets     │   │ debate_log.jsonl │   └─────────────┘│
+  │   ┌──────────────┐   ┌──────────────────┐  ┌─────────────┐│
+  │   │ data/mock/   │   │ storage/         │  │ app/static/ ││
+  │   │ structured   │   │ consensus.jsonl  │  │ plots/*.png ││
+  │   │ snippets     │   │ debate_log.jsonl |  └─────────────┘│
   │   └──────────────┘   │ reasoning_trace  │                 │
-  │                      └──────────────────┘                │
+  │                      └──────────────────┘                 │
   └───────────────────────────────────────────────────────────┘
   ```
   Legend
@@ -107,6 +107,83 @@ This is a personal project developed by Marcus Izumi, in an attempt to implement
      download logs.
 
 ----
+
+#Debat Engine
+
+```
+┌───────────────────────────────  Debate Round  ────────────────────────────────┐
+│                                                                               │
+│  Step 1: Baseline reports (round 0)                                           │
+│                                                                               │
+│   ┌──────-──────────┐   ┌────────────────┐   ┌────────────────┐               │
+│   │ FundamentalAgent│   │ SentimentAgent │   │ ValuationAgent │               │
+│   │  - analyze()    │   │  - analyze()   │   │  - analyze()   │               │
+│ - uses MockRetriever│- uses MockRetriever│- uses MockRetriever│               │
+│ - falls back on stub│- falls back on stub│- falls back on stub│               │           
+│   │    if LLM fails │   │    if LLM fails│   │   if LLM fails │               │
+│   └───────-─────────┘   └────────────────┘   └────────────────┘               │
+│          │                 │                    │                             │
+│          └──── baseline AgentReports (decision + rationale + metrics) ────────┘
+│                                                                               │
+│  Step 2: Debate round (critique → revision)                                   │
+│                                                                               │
+│  Critique Phase:                                                              │
+│    • DebateEngine iterates in turn order (fundamental → sentiment → valuation)│
+│    • For each agent:                                                          │
+│        – Gathers:                                                             │
+│            reports (self + peers)                                             │
+│            debate history (previous messages)                                 │
+│            retrieved snippets (MockRetriever.search)                          │
+│        – Builds variables {stage: "critique", round: n, ...}                  │
+│        – Calls agent.query_llm()                                              │
+│        – Logs prompt/response to reasoning_trace                              │
+│        – Streams message via SSE (Live Debate Panel)                          │
+│                                                                               │
+│  Revision Phase:                                                              │
+│    • After critiques, each agent revises its report:                          │
+│        – Summarizes incoming critiques                                        │
+│        – Reuses retriever context                                             │
+│        – Calls query_llm() with {stage: "revision", ...}                      │
+│        – Updates AgentReport rationale/metrics                                │
+│                                                                               │
+│  DebateEngine persists:                                                       │
+│    – Every message (critique/revision) to storage/debate_log.jsonl            │
+│    – Every prompt + response to storage/reasoning_trace.jsonl                 │
+│                                                                               │
+│  Step 3: Repeat round (up to max_rounds, default = 2)                         │
+│                                                                               │
+└───────────────────────────────────────────────────────────────────────────────┘
+
+
+┌─────────────────────────────  Final Consensus  ───────────────────────────────┐
+│                                                                               │
+│ • Coordinator.aggregate(...) receives updated reports + debate transcript +   │
+│   backtest summary                                                            │
+│ • LLM explanation:                                                            │
+│      – CoordinatorAgent.query_llm() with {reports, debate_messages, backtest} │
+│      – Falls back if OpenAI key missing / quota exceeded                      │
+│      – Logs to reasoning_trace                                                │
+│ • Majority vote / tie-break on BUY / SELL                                     │
+│ • consensus.explanation_llm / explanation_points surface on the UI            │
+│ • Portfolio backtest uses consensus decision to generate plots                │
+│                                                                               │
+└───────────────────────────────────────────────────────────────────────────────┘
+
+
+
+```
+
+
+  Quick recap:
+
+  - Each round has two phases: critiques (agents review peers) and revisions (agents update their own report).
+  - Every LLM call (agent or coordinator) goes through BaseAgent.query_llm(), pulling context from MockRetriever and falling back to
+    deterministic text when necessary.
+  - Debate messages stream live to the browser, while richer details (variables, results) are filed in reasoning_trace.jsonl.
+  - Once the debate ends, the coordinator synthesizes the final explanation and passes it along with the majority decision to the front-end/
+    backtester.
+
+    
 # Personal Background / Motivation
 
 Recently, I completed a software engineer internship at an investment bank, and was exposed to equity systems and how technology really intersects with financial markets - and then I heard about this paper.
