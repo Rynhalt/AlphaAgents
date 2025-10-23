@@ -34,7 +34,7 @@ This is a personal project developed by Marcus Izumi, in an attempt to implement
                   ┌─────────────────────────┐
                   │        Browser UI       │
                   │ (index.html + JS, SSE)  │
-                  └─────────────┬──────────┘
+                  └─────────────┬─────────-─┘
                                 │
                                 │ HTTP requests (POST /run_ticker, GET /stream/{ticker}, etc.)
                                 │
