@@ -41,8 +41,15 @@ class ReasoningTraceLogger:
                 line = line.strip()
                 if not line:
                     continue
-                entries.append(ReasoningTraceEntry.model_validate_json(line))
+                try:
+                    entries.append(ReasoningTraceEntry.model_validate_json(line))
+                except Exception:
+                    # Skip malformed legacy entries
+                    continue
         return entries
+
+    def read_session(self, session_id: str) -> List[ReasoningTraceEntry]:
+        return [entry for entry in self.read() if entry.session_id == session_id]
 
     def tail(self, count: int = 5) -> List[ReasoningTraceEntry]:
         return self.read()[-count:]

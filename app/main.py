@@ -183,12 +183,7 @@ def _sse_generator(messages: Iterable) -> Iterable[str]:
 @app.get("/api/trace/{session_id}")
 async def get_trace(session_id: str) -> Dict[str, Any]:
     """Return reasoning trace entries for a given session."""
-    entries = trace_logger.read()
-    filtered = [
-        entry.model_dump()
-        for entry in entries
-        if entry.session_id == session_id
-    ]
+    filtered = [entry.model_dump() for entry in trace_logger.read_session(session_id)]
     return {"entries": filtered}
 
 
