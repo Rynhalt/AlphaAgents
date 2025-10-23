@@ -6,7 +6,7 @@ This guide gives product reviewers a quick tour of the prototype and explains ho
 
 - The app was deployed on Render using the free FastAPI web service.
 - Live LLM calls quickly consumed the OpenAI quota, so the hosted instance now falls back to the mock responses. To avoid unexpected charges, the Render service is currently disabled.
-- If we redeploy, remember to set `OPENAI_API_KEY` in Render’s dashboard and run `/run_ticker` once after each deploy to regenerate the Matplotlib charts.
+- My credit card balance was not having it :(
 
 ## Local Walkthrough
 
