@@ -200,6 +200,6 @@ When reading through the paper, I noticed there was not a lot of technical expla
 
 The personal goal here, for me, is to be familaized with multi-agentic frameworks, as well as to get a sense of how fundamental, technical and macro analysis are done during the valuation of their stocks.
 
-This project is far from mathematical for now.
+Current emphasis is on reasoning and architecture; quantitative modeling will follow once the framework stabilizes.
 
 The current implementation focuses on architecture, agent interaction, and reasoning flow, not on financial accuracy or quantitative modeling.
