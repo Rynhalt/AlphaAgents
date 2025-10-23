@@ -37,8 +37,10 @@ def test_run_backtest_generates_metrics_and_weights(tmp_path: Path) -> None:
 
     cumulative_path = Path(metrics["plots"]["cumulative"])
     rolling_path = Path(metrics["plots"]["rolling_sharpe"])
+    drawdown_path = Path(metrics["plots"]["drawdown"])
     assert cumulative_path.exists()
     assert rolling_path.exists()
+    assert drawdown_path.exists()
 
 
 def test_default_plot_dir_creates_static_files() -> None:
@@ -49,5 +51,7 @@ def test_default_plot_dir_creates_static_files() -> None:
 
     cumulative = Path("app/static/plots/cumulative_return.png")
     rolling = Path("app/static/plots/rolling_sharpe.png")
+    drawdown = Path("app/static/plots/drawdown.png")
     assert cumulative.exists()
     assert rolling.exists()
+    assert drawdown.exists()

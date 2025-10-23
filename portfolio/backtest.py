@@ -10,6 +10,9 @@ import matplotlib
 
 matplotlib.use("Agg")  # Use non-interactive backend for tests and headless envs
 import matplotlib.pyplot as plt
+from matplotlib.ticker import PercentFormatter
+
+plt.style.use("seaborn-v0_8")
 
 from portfolio.selector import serialize_weights
 
@@ -95,10 +98,21 @@ def rolling_sharpe_series(daily_returns: Iterable[float], window: int = 21) -> L
     return ratios
 
 
+def drawdown_series(curve: Iterable[float]) -> List[float]:
+    """Return drawdown values (negative when below prior peak)."""
+    drawdowns: List[float] = []
+    peak = 0.0
+    for value in curve:
+        peak = max(peak, value)
+        drawdowns.append(value - peak)
+    return drawdowns
+
+
 def _plot_series(x, y, title: str, ylabel: str, filepath: Path) -> None:
     """Helper to plot a single series to disk."""
     plt.figure(figsize=(8, 4))
-    plt.plot(x, y, color="#38bdf8")
+    plt.plot(x, y, color="#38bdf8", linewidth=2)
+    plt.fill_between(x, y, alpha=0.15, color="#38bdf8")
     plt.title(title)
     plt.xlabel("Days")
     plt.ylabel(ylabel)
@@ -109,26 +123,47 @@ def _plot_series(x, y, title: str, ylabel: str, filepath: Path) -> None:
     plt.close()
 
 
+def _plot_drawdown(x, drawdowns: List[float], filepath: Path) -> None:
+    fig, ax = plt.subplots(figsize=(8, 4))
+    ax.fill_between(x, drawdowns, 0, color="#f97316", alpha=0.3, step="pre")
+    ax.plot(x, drawdowns, color="#f97316", linewidth=1.5)
+    ax.set_title("Drawdown (vs. running peak)")
+    ax.set_xlabel("Days")
+    ax.set_ylabel("Drawdown")
+    ax.yaxis.set_major_formatter(PercentFormatter(1.0))
+    ax.grid(alpha=0.2)
+    ax.set_ylim(min(drawdowns + [0]) * 1.1, 0.01)
+    plt.tight_layout()
+    filepath.parent.mkdir(parents=True, exist_ok=True)
+    plt.savefig(filepath)
+    plt.close()
+
+
 def save_backtest_plots(
     cumulative_curve: Iterable[float],
     rolling_sharpe: Iterable[float],
+    drawdowns: Iterable[float],
     plot_dir: Path,
 ) -> Dict[str, str]:
     """Persist backtest plots to the static plots directory."""
     plot_dir.mkdir(parents=True, exist_ok=True)
     curve_list = list(cumulative_curve)
     rolling_list = list(rolling_sharpe)
+    drawdown_list = list(drawdowns)
     x_axis = list(range(1, len(curve_list) + 1))
 
     cumulative_path = plot_dir / "cumulative_return.png"
     rolling_path = plot_dir / "rolling_sharpe.png"
+    drawdown_path = plot_dir / "drawdown.png"
 
     _plot_series(x_axis, curve_list, "Cumulative Return", "Return", cumulative_path)
     _plot_series(x_axis, rolling_list, "Rolling Sharpe (21d)", "Sharpe", rolling_path)
+    _plot_drawdown(x_axis, drawdown_list, drawdown_path)
 
     return {
         "cumulative": str(cumulative_path),
         "rolling_sharpe": str(rolling_path),
+        "drawdown": str(drawdown_path),
     }
 
 
@@ -149,7 +184,8 @@ def run_backtest(
     sharpe = annualized_sharpe(daily_returns)
     drawdown = max_drawdown(curve)
     rolling_series = rolling_sharpe_series(daily_returns)
-    plots = save_backtest_plots(curve, rolling_series, plot_dir)
+    drawdowns = drawdown_series(curve)
+    plots = save_backtest_plots(curve, rolling_series, drawdowns, plot_dir)
 
     return {
         "sharpe": sharpe,

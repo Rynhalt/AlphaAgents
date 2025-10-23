@@ -24,6 +24,7 @@
           </label>
           <button type="submit">Start Session</button>
         </form>
+        <p class="mock-note">Currently uses structured mock context for AAPL, MSFT, and TSLA.</p>
       </section>
 
       <section class="debate-panel">
@@ -45,7 +46,7 @@
         </header>
         <div id="explanation-panel" class="trace-content hidden">
           <h3>LLM Summary</h3>
-          <p id="consensus-explanation" class="trace-placeholder">No explanation yet.</p>
+          <p id="consensus-explanation" class="trace-placeholder">Run a session to generate the LLM narrative.</p>
           <h4>Key Points</h4>
           <ul id="consensus-points" class="trace-points"></ul>
         </div>
@@ -60,224 +61,290 @@
           <h2>Backtest Metrics</h2>
           <div id="backtest-summary" class="backtest-summary"></div>
         </header>
-        <div class="plots-grid">
+        <div id="plots-placeholder" class="plots-placeholder">Start a session to generate performance charts.</div>
+        <div class="plots-grid hidden" id="plots-grid">
           <figure>
-            <img id="plot-cumulative" src="/static/plots/cumulative_return.png" alt="Cumulative Return plot" />
+            <img id="plot-cumulative" src="" alt="Cumulative Return plot" />
             <figcaption>Cumulative Return</figcaption>
           </figure>
           <figure>
-            <img id="plot-sharpe" src="/static/plots/rolling_sharpe.png" alt="Rolling Sharpe plot" />
+            <img id="plot-sharpe" src="" alt="Rolling Sharpe plot" />
             <figcaption>Rolling Sharpe</figcaption>
+          </figure>
+          <figure>
+            <img id="plot-drawdown" src="" alt="Drawdown plot" />
+            <figcaption>Drawdown Profile</figcaption>
           </figure>
         </div>
       </section>
     </main>
 
     <script>
-      const form = document.getElementById("run-form");
-      const tickerInput = document.getElementById("ticker-input");
-      const riskInput = document.getElementById("risk-input");
-      const log = document.getElementById("debate-log");
-      const statusBadge = document.getElementById("status");
-      const consensusDecision = document.getElementById("consensus-decision");
-      const toggleExplanationButton = document.getElementById("toggle-explanation");
-      const toggleTraceButton = document.getElementById("toggle-trace");
-      const consensusExplanationEl = document.getElementById("consensus-explanation");
-      const consensusPointsEl = document.getElementById("consensus-points");
-      const explanationPanel = document.getElementById("explanation-panel");
-      const tracePanel = document.getElementById("reasoning-trace");
-      const traceLogEl = document.getElementById("trace-log");
-      const plotCumulative = document.getElementById("plot-cumulative");
-      const plotSharpe = document.getElementById("plot-sharpe");
-      const backtestSummary = document.getElementById("backtest-summary");
+      (function () {
+        const form = document.getElementById("run-form");
+        const tickerInput = document.getElementById("ticker-input");
+        const riskInput = document.getElementById("risk-input");
+        const log = document.getElementById("debate-log");
+        const statusBadge = document.getElementById("status");
+        const consensusDecision = document.getElementById("consensus-decision");
+        const toggleExplanationButton = document.getElementById("toggle-explanation");
+        const toggleTraceButton = document.getElementById("toggle-trace");
+        const consensusExplanationEl = document.getElementById("consensus-explanation");
+        const consensusPointsEl = document.getElementById("consensus-points");
+        const explanationPanel = document.getElementById("explanation-panel");
+        const tracePanel = document.getElementById("reasoning-trace");
+        const traceLogEl = document.getElementById("trace-log");
+        const plotCumulative = document.getElementById("plot-cumulative");
+        const plotSharpe = document.getElementById("plot-sharpe");
+        const plotDrawdown = document.getElementById("plot-drawdown");
+        const plotsPlaceholder = document.getElementById("plots-placeholder");
+        const plotsGrid = document.getElementById("plots-grid");
+        const backtestSummary = document.getElementById("backtest-summary");
 
-      let explanationVisible = false;
-      let traceVisible = false;
-      let currentSource;
+        let explanationVisible = false;
+        let traceVisible = false;
+        let debateTimer = null;
 
-      function setStatus(text, state) {
-        statusBadge.textContent = text;
-        statusBadge.className = `status status-${state}`;
-      }
-
-      function closeStream() {
-        if (currentSource) {
-          currentSource.close();
-          currentSource = undefined;
-        }
-      }
-
-      function formatContent(text = "") {
-        if (!text) return "";
-        if (text.startsWith("[LLM:")) {
-          return text;
-        }
-        const escaped = text
-          .replace(/&/g, "&amp;")
-          .replace(/</g, "&lt;")
-          .replace(/>/g, "&gt;");
-        const withParagraphs = escaped
-          .replace(/\r\n/g, "\n")
-          .replace(/\n\n+/g, "</p><p>")
-          .replace(/\n/g, "<br>");
-        return `<p>${withParagraphs}</p>`;
-      }
-
-      function appendMessage(message) {
-        const li = document.createElement("li");
-        const fallback = message.content?.startsWith?.("[LLM:");
-        li.className = `debate-entry debate-${message.agent}${fallback ? " fallback" : ""}`;
-        li.innerHTML = `
-          <span class="meta">Round ${message.round} · ${message.agent} · ${message.stage}</span>
-          <span class="content">${formatContent(message.content)}</span>
-        `;
-        log.appendChild(li);
-        li.scrollIntoView({ behavior: "smooth", block: "end" });
-      }
-
-      function updateConsensus(consensus) {
-        consensusDecision.textContent = `Decision: ${consensus.final_decision} (Conviction ${consensus.conviction})`;
-        const fallbackFlag = consensus.metrics?.llm_explanation_fallback ?? 0;
-        const points = consensus.explanation_points || [];
-
-        if (!consensus.explanation_llm || fallbackFlag) {
-          consensusExplanationEl.textContent = "LLM explanation unavailable (fallback response).";
-        } else {
-          consensusExplanationEl.innerHTML = formatContent(consensus.explanation_llm);
+        function setStatus(text, state) {
+          statusBadge.textContent = text;
+          statusBadge.className = `status status-${state}`;
         }
 
-        consensusPointsEl.innerHTML = "";
-        if (!fallbackFlag && points.length) {
-          points.forEach((point) => {
-            const li = document.createElement("li");
-            li.textContent = point;
-            consensusPointsEl.appendChild(li);
-          });
+        function resetInterface() {
+          if (debateTimer) {
+            clearTimeout(debateTimer);
+            debateTimer = null;
+          }
+          setStatus("Idle", "idle");
+          log.innerHTML = "";
+          consensusDecision.textContent = "";
+          consensusExplanationEl.textContent = "Run a session to generate the LLM narrative.";
+          consensusPointsEl.innerHTML = "";
+          explanationPanel.classList.add("hidden");
+          tracePanel.classList.add("hidden");
+          explanationVisible = false;
+          traceVisible = false;
+          toggleExplanationButton.disabled = true;
+          toggleTraceButton.disabled = true;
+          toggleExplanationButton.textContent = "Show Explanation";
+          toggleTraceButton.textContent = "Show Reasoning Trace";
+          traceLogEl.innerHTML = "";
+          plotsPlaceholder.classList.remove("hidden");
+          plotsGrid.classList.add("hidden");
+          plotCumulative.removeAttribute("src");
+          plotSharpe.removeAttribute("src");
+          plotDrawdown.removeAttribute("src");
+          backtestSummary.innerHTML = "";
         }
-      }
 
-      function updateBacktest(backtest) {
-        const { sharpe, max_drawdown, final_return, plots } = backtest;
-        backtestSummary.innerHTML = `
-          <div>Sharpe: ${sharpe ?? "N/A"}</div>
-          <div>Max Drawdown: ${max_drawdown ?? "N/A"}</div>
-          <div>Final Return: ${final_return ?? "N/A"}</div>
-        `;
-        const bust = `?t=${Date.now()}`;
-        if (plots?.cumulative) {
-          plotCumulative.src = `${plots.cumulative}${bust}`;
-        }
-        if (plots?.rolling_sharpe) {
-          plotSharpe.src = `${plots.rolling_sharpe}${bust}`;
-        }
-      }
+        function formatContent(text = "") {
+          if (!text) return "";
+          if (text.startsWith("[LLM:")) {
+            return text;
+          }
 
-      function renderTrace(entries) {
-        traceLogEl.innerHTML = "";
-        if (!entries.length) {
+          const escaped = text
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;");
+
+          const bulletItems = escaped
+            .split(/\n+/)
+            .map((line) => line.trim())
+            .filter((line) => line.startsWith("- "));
+          if (bulletItems.length) {
+            const lis = bulletItems
+              .map((line) => line.replace(/^[-]+\s*/, ""))
+              .map((item) => `<li>${item}</li>`)
+              .join("");
+            return `<ul>${lis}</ul>`;
+          }
+
+          const normalized = escaped.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+          const paragraphs = normalized
+            .split(/\n{2,}/)
+            .map((block) => block.replace(/\n/g, "<br>"));
+          return `<p>${paragraphs.join("</p><p>")}</p>`;
+        }
+
+        function appendMessage(message) {
+          const fallback = message.content?.startsWith?.("[LLM:");
           const li = document.createElement("li");
-          li.className = "trace-placeholder";
-          li.textContent = "No reasoning trace available yet.";
-          traceLogEl.appendChild(li);
-          return;
-        }
-        entries.forEach((entry) => {
-          const confidence = entry.result?.confidence ?? entry.result?.score ?? "N/A";
-          const fallback = entry.result?.fallback;
-          const li = document.createElement("li");
+          li.className = `debate-entry debate-${message.agent}${fallback ? " fallback" : ""}`;
           li.innerHTML = `
-            <details>
-              <summary>${entry.agent_role} · ${entry.stage} · score: ${confidence}${fallback ? " (fallback)" : ""}</summary>
-              <pre class="trace-json">Variables:\n${JSON.stringify(entry.variables, null, 2)}</pre>
-              <pre class="trace-json">Result:\n${JSON.stringify(entry.result, null, 2)}</pre>
-            </details>
+            <span class="meta">Round ${message.round} · ${message.agent} · ${message.stage}</span>
+            <span class="content">${formatContent(message.content)}</span>
           `;
-          traceLogEl.appendChild(li);
-        });
-      }
-
-      async function fetchReasoningTrace(sessionId) {
-        try {
-          const response = await fetch(`/api/trace/${sessionId}`);
-          if (!response.ok) {
-            throw new Error("Failed to load trace");
-          }
-          const data = await response.json();
-          renderTrace(data.entries || []);
-          toggleTraceButton.disabled = false;
-        } catch (error) {
-          console.error(error);
+          log.appendChild(li);
+          li.scrollIntoView({ behavior: "smooth", block: "end" });
         }
-      }
 
-      function toggleExplanation() {
-        explanationVisible = !explanationVisible;
-        explanationPanel.classList.toggle("hidden", !explanationVisible);
-        toggleExplanationButton.textContent = explanationVisible ? "Hide Explanation" : "Show Explanation";
-      }
+        function playDebate(messages = []) {
+          if (!messages.length) {
+            setStatus("Debate Complete", "idle");
+            return;
+          }
 
-      function toggleTrace() {
-        traceVisible = !traceVisible;
-        tracePanel.classList.toggle("hidden", !traceVisible);
-        toggleTraceButton.textContent = traceVisible ? "Hide Trace" : "Show Reasoning Trace";
-      }
+          let index = 0;
+          const displayNext = () => {
+            appendMessage(messages[index]);
+            index += 1;
+            if (index < messages.length) {
+              debateTimer = setTimeout(displayNext, 550);
+            } else {
+              setStatus("Debate Complete", "idle");
+            }
+          };
+          setStatus("Debate in progress…", "active");
+          displayNext();
+        }
 
-      toggleExplanationButton.addEventListener("click", toggleExplanation);
-      toggleTraceButton.addEventListener("click", toggleTrace);
+        function updateConsensus(consensus) {
+          if (!consensus) {
+            consensusDecision.textContent = "Decision unavailable.";
+            return;
+          }
 
-      form.addEventListener("submit", async (event) => {
-        event.preventDefault();
-        closeStream();
-        log.innerHTML = "";
-        explanationPanel.classList.add("hidden");
-        tracePanel.classList.add("hidden");
-        explanationVisible = false;
-        traceVisible = false;
-        toggleExplanationButton.disabled = true;
-        toggleTraceButton.disabled = true;
-        toggleExplanationButton.textContent = "Show Explanation";
-        toggleTraceButton.textContent = "Show Reasoning Trace";
-        consensusExplanationEl.textContent = "No explanation yet.";
-        consensusPointsEl.innerHTML = "";
-        traceLogEl.innerHTML = "";
+          consensusDecision.textContent = `Decision: ${consensus.final_decision} (Conviction ${consensus.conviction})`;
+          const fallbackFlag = consensus.metrics?.llm_explanation_fallback ?? 0;
+          const points = consensus.explanation_points || [];
 
-        const ticker = tickerInput.value.trim() || "AAPL";
-        const riskProfile = riskInput.value;
-        setStatus("Loading…", "loading");
+          if (!consensus.explanation_llm || fallbackFlag) {
+            consensusExplanationEl.textContent = "LLM explanation unavailable (fallback response).";
+          } else {
+            consensusExplanationEl.innerHTML = formatContent(consensus.explanation_llm);
+          }
 
-        try {
-          const response = await fetch("/run_ticker", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ ticker, risk_profile: riskProfile }),
+          consensusPointsEl.innerHTML = "";
+          if (!fallbackFlag && points.length) {
+            points.forEach((point) => {
+              const li = document.createElement("li");
+              li.textContent = point;
+              consensusPointsEl.appendChild(li);
+            });
+          }
+        }
+
+        function updateBacktest(backtest) {
+          if (!backtest) {
+            backtestSummary.innerHTML = "<div>No backtest results.</div>";
+            return;
+          }
+
+          const { sharpe, max_drawdown, final_return, plots } = backtest;
+          backtestSummary.innerHTML = `
+            <div>Sharpe: ${sharpe ?? "N/A"}</div>
+            <div>Max Drawdown: ${max_drawdown ?? "N/A"}</div>
+            <div>Final Return: ${final_return ?? "N/A"}</div>
+          `;
+
+          if (plots) {
+            const cacheBuster = `?t=${Date.now()}`;
+            if (plots.cumulative) {
+              plotCumulative.src = `${plots.cumulative}${cacheBuster}`;
+            }
+            if (plots.rolling_sharpe) {
+              plotSharpe.src = `${plots.rolling_sharpe}${cacheBuster}`;
+            }
+            if (plots.drawdown) {
+              plotDrawdown.src = `${plots.drawdown}${cacheBuster}`;
+            }
+            plotsPlaceholder.classList.add("hidden");
+            plotsGrid.classList.remove("hidden");
+          } else {
+            plotsPlaceholder.classList.remove("hidden");
+            plotsGrid.classList.add("hidden");
+          }
+        }
+
+        function renderTrace(entries) {
+          traceLogEl.innerHTML = "";
+
+          if (!entries.length) {
+            const li = document.createElement("li");
+            li.className = "trace-placeholder";
+            li.textContent = "No reasoning trace available yet.";
+            traceLogEl.appendChild(li);
+            return;
+          }
+
+          entries.forEach((entry) => {
+            const confidence = entry.result?.confidence ?? entry.result?.score ?? "N/A";
+            const fallback = entry.result?.fallback;
+            const li = document.createElement("li");
+            li.innerHTML = `
+              <details>
+                <summary>${entry.agent_role} · ${entry.stage} · score: ${confidence}${fallback ? " (fallback)" : ""}</summary>
+                <pre class="trace-json">Variables:
+${JSON.stringify(entry.variables, null, 2)}
+</pre>
+                <pre class="trace-json">Result:
+${JSON.stringify(entry.result, null, 2)}
+</pre>
+              </details>
+            `;
+            traceLogEl.appendChild(li);
           });
-          if (!response.ok) {
-            throw new Error("Failed to start session");
-          }
-          const data = await response.json();
-          const { consensus, backtest, session_id } = data;
-          setStatus(`Consensus: ${consensus.final_decision}`, "active");
-          updateConsensus(consensus);
-          updateBacktest(backtest);
-          toggleExplanationButton.disabled = false;
-          await fetchReasoningTrace(session_id);
-        } catch (error) {
-          setStatus("Error", "error");
-          console.error(error);
-          return;
         }
 
-        currentSource = new EventSource(`/stream/${ticker}`);
-        currentSource.onopen = () => setStatus("Streaming", "active");
-        currentSource.onmessage = (event) => {
-          const payload = JSON.parse(event.data);
-          appendMessage(payload);
-        };
-        currentSource.onerror = () => {
-          setStatus("Disconnected", "idle");
-          closeStream();
-        };
-      });
+        async function fetchReasoningTrace(sessionId) {
+          try {
+            const response = await fetch(`/api/trace/${sessionId}`);
+            if (!response.ok) {
+              throw new Error("Failed to load trace");
+            }
+            const data = await response.json();
+            renderTrace(data.entries || []);
+            toggleTraceButton.disabled = false;
+          } catch (error) {
+            console.error(error);
+          }
+        }
+
+        toggleExplanationButton.addEventListener("click", () => {
+          explanationVisible = !explanationVisible;
+          explanationPanel.classList.toggle("hidden", !explanationVisible);
+          toggleExplanationButton.textContent = explanationVisible ? "Hide Explanation" : "Show Explanation";
+        });
+
+        toggleTraceButton.addEventListener("click", () => {
+          traceVisible = !traceVisible;
+          tracePanel.classList.toggle("hidden", !traceVisible);
+          toggleTraceButton.textContent = traceVisible ? "Hide Trace" : "Show Reasoning Trace";
+        });
+
+        form.addEventListener("submit", async (event) => {
+          event.preventDefault();
+          resetInterface();
+
+          const ticker = tickerInput.value.trim() || "AAPL";
+          const riskProfile = riskInput.value;
+          setStatus("Analysing…", "loading");
+
+          try {
+            const response = await fetch("/run_ticker", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ ticker, risk_profile: riskProfile }),
+            });
+            if (!response.ok) {
+              throw new Error("Failed to start session");
+            }
+
+            const data = await response.json();
+            const { consensus, backtest, session_id, debate = [] } = data;
+
+            updateConsensus(consensus);
+            updateBacktest(backtest);
+            toggleExplanationButton.disabled = false;
+            playDebate(debate);
+            fetchReasoningTrace(session_id);
+          } catch (error) {
+            setStatus("Error", "error");
+            console.error(error);
+          }
+        });
+      })();
     </script>
   </body>
 </html>
