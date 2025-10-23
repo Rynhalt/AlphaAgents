@@ -45,8 +45,3 @@ This guide gives product reviewers a quick tour of the prototype and explains ho
 - The “Live Debate Stream” replays messages after the API call finishes; true streaming will land in a later milestone.
 - Render deployment cannot persist the generated PNGs across restarts; re-run `/run_ticker` once per deploy.
 
-## Next Steps
-
-- Replace mock data with live filings/news/prices once data connectors are enabled.
-- Improve the front-end to render agent dialogue with richer formatting.
-- Automate regeneration of demo assets whenever major UI changes ship.
