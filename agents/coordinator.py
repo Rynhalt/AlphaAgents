@@ -211,14 +211,16 @@ class Coordinator:
 
 
 class CoordinatorAgent(BaseAgent):
+    """Thin wrapper so the coordinator can call BaseAgent.query_llm."""
+
     def __init__(self, prompt_file: str):
-        super().__init__(role=AgentRole.COORDINATOR, prompt_file=prompt_file)
+        super().__init__(role=AgentRole.COORDINATOR, name="CoordinatorAgent", prompt_file=prompt_file)
 
-    async def analyze(self, ticker: str, asof_date: date, risk_profile: str | None = None):
+    async def analyze(self, ticker: str, asof_date: date, risk_profile: str | None = None):  # pragma: no cover - unused
         raise NotImplementedError
 
-    async def critique(self, target_report: AgentReport, peer_reports):
+    async def critique(self, target_report: AgentReport, peer_reports):  # pragma: no cover - unused
         raise NotImplementedError
 
-    async def revise(self, original_report: AgentReport, critiques):
+    async def revise(self, original_report: AgentReport, critiques):  # pragma: no cover - unused
         raise NotImplementedError
