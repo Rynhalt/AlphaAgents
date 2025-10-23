@@ -1,10 +1,113 @@
-## AlphaAgents
+# AlphaAgents
 
 This is a personal project developed by Marcus Izumi, in an attempt to implement a prototype for multi-agent framework as discussed in the paper written by BlackRock research scientists in August this year (2025):
 - *AlphaAgents: Large Language Model based Multi-Agents for Equity Portfolio Constructions*
 - https://arxiv.org/html/2508.11152v1
 
-## Personal Background / Motivation
+---
+
+  ## Features 
+
+  - LLM-driven agents for fundamental, sentiment, and valuation analysis—each generates structured reports (decision, confidence, rationale,
+    metrics) with OpenAI fallback.
+  - Debate engine runs two critique/revision rounds, streams messages via SSE, and logs every prompt/response to storage/
+    reasoning_trace.jsonl.
+  - Coordinator synthesizes the final consensus (majority vote + tie-breaker) and, when the key is available, calls the LLM for a narrative
+    and bullet points; falls back gracefully otherwise.
+  - Portfolio backtester builds equal-weight portfolios off the consensus, runs a mock return simulation, and saves Matplotlib plots
+    (cumulative_return.png, rolling_sharpe.png).
+  - Front-end (FastAPI + Jinja) includes risk-profile selection, color-coded live debate stream, collapsible coordinator insights, reasoning
+    trace viewer, and auto-refreshing plots.
+
+  ---
+
+  ## Architecture
+
+  - app/main.py – FastAPI routes (/run_ticker, /stream/{ticker}, /api/trace/{session_id}, /run_consensus, /health) and SSE streaming.
+  - agents/ – Domain agents (*Agent), debate engine (DebateEngine), coordinator, plus shared Pydantic models (reports, consensus).
+  - data/mock/ – Per-ticker JSON snippets (filings/news/prices) that feed the mock retriever.
+  - data/indices/retriever.py – Loads structured snippets and returns metadata-rich hits.
+  - portfolio/ – Backtest utilities and selectors.
+  - storage/ – Runtime outputs: consensus/debate logs, reasoning trace, Matplotlib PNGs.
+
+ ```
+                  ┌─────────────────────────┐
+                  │        Browser UI       │
+                  │ (index.html + JS, SSE)  │
+                  └─────────────┬──────────┘
+                                │
+                                │ HTTP requests (POST /run_ticker, GET /stream/{ticker}, etc.)
+                                │
+  ┌─────────────────────────────┴────────────────────────────┐
+  │                    FastAPI Application                    │
+  │                     (app/main.py)                         │
+  │                                                           │
+  │   ┌─────────────┐        ┌─────────────┐                  │
+  │   │ /run_ticker │        │/run_consensus│                 │
+  │   └─────┬───────┘        └──────┬───────┘                 │
+  │         │ POST JSON              │ GET                    │
+  │         │                        │                        │
+  │         ▼                        ▼                        │
+  │   ┌───────────────┐       ┌────────────┐                  │
+  │   │ DebateEngine  │       │ Coordinator │                 │
+  │   │ (critique +   │       │ (final vote │                 │
+  │   │ revisions,    │       │ + LLM expl.)│                 │
+  │   │ SSE streaming)│       └─────┬──────┘                  │
+  │   └────┬──────────┘             │                         │
+  │        │                        │ Consensus object        │
+  │        │ SSE events             │ (decision, rationale,   │
+  │        │                        │ explanation_llm, etc.)  │
+  │        │                        │                         │
+  │        ▼                        │                         │
+  │   ┌───────────────────┐ ┌───────▼────────┐                │
+  │   │ Agents (Fund/Sent/│ │ Portfolio      │                │
+  │   │ Valuation)        │ │ Backtest       │                │
+  │   │- BaseAgent.query_ │ │ (equal-weight, │                │
+  │   │  llm() w/ fallback│ │ Matplotlib)    │                │
+  │   └─────┬─────────────┘ └───────┬────────┘                │
+  │         │ inputs                │ outputs                 │
+  │         ▼                       ▼                         │
+  │   ┌──────────────┐   ┌──────────────────┐   ┌─────────────┐│
+  │   │ data/mock/   │   │ storage/         │   │ app/static/ ││
+  │   │ structured   │   │ consensus.jsonl  │   │ plots/*.png ││
+  │   │ snippets     │   │ debate_log.jsonl │   └─────────────┘│
+  │   └──────────────┘   │ reasoning_trace  │                 │
+  │                      └──────────────────┘                │
+  └───────────────────────────────────────────────────────────┘
+  ```
+  Legend
+
+  - Browser UI: submits tickers/risk profile, streams live debate, toggles coordinator insight panels.
+  - FastAPI: orchestrates agents → debate → coordinator → backtest.
+  - Agents: run query_llm with structured context (retriever + debate history) and fall back to deterministic text if needed.
+  - Data/mock: ticker-specific JSON (filings/news/prices) loaded by MockRetriever.
+  - Storage: logs (consensus, debate, reasoning trace) and Matplotlib outputs saved per run.
+
+  ---
+
+  ## Notes & Caveats
+
+  - Render’s filesystem is ephemeral: PNGs and JSONL logs reset on redeploy. Use external storage if you need persistence.
+  - Reasoning trace entries log everything, including fallback responses. /api/trace/{session_id} filters them dynamically.
+  - LLM outputs depend on OPENAI_API_KEY. Without it (or with insufficient quota) the UI still runs but shows fallback text.
+  - Mock prices/returns are deterministic; to demonstrate dynamic plots, swap in real pricing (e.g., yfinance) or randomize the mock series.
+
+  ---
+
+  ## Next Steps
+
+  1. yfinance / price loader stubs – Add an optional loader that fetches real OHLCV windows when enabled, with the current mock pipeline as
+     fallback.
+  2. External retrieval interface – Sketch a search hook (Perplexity/OpenAI Search) the agents can call; for now, just wire up the interface
+     and keep using mock data.
+  3. Documentation updates – Note the new env vars (API keys for price retrieval/search) in DEV.md and a sample .env.
+  4. Deployment polish – Ensure Render picks up the latest static assets every deploy (cache busting is mostly done; double-check static
+     settings).
+  5. Future UI niceties – Markdown rendering for the debate log (to show headings/bullets cleanly), richer tooltips, and maybe an option to
+     download logs.
+
+----
+# Personal Background / Motivation
 
 Recently, I completed a software engineer internship at an investment bank, and was exposed to equity systems and how technology really intersects with financial markets - and then I heard about this paper.
 
