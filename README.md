@@ -106,9 +106,9 @@ The paper sketches a debate-driven ensemble of domain agents (fundamental, senti
 
   ## Next Steps
 
-  1. yfinance / price loader stubs – Add an optional loader that fetches real OHLCV windows when enabled, with the current mock pipeline as
+  1. yfinance / price loader stubs – Add an optional loader that fetches real OHLC/OHLCV windows when enabled, with the current mock pipeline as
      fallback.
-  2. External retrieval interface – Sketch a search hook (Perplexity/OpenAI Search) the agents can call; for now, just wire up the interface
+  2. External retrieval interface – Sketch a search hook (Perplexity/OpenAI Search) the agents can call; for now, we just wire up the interface
      and keep using mock data.
   3. Econometric models – After a deeper dive into valuation math, wire in factor regressions, discounted cash-flow variants, or cross-sectional signals each agent can call.
   4. Reinforcement learning experiments – Explore policy-gradient style loops where agents learn critique/revision strategies or the portfolio allocator learns position sizing from reward signals.
