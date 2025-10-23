@@ -4,9 +4,9 @@ This guide gives product reviewers a quick tour of the prototype and explains ho
 
 ## Hosted Preview (paused)
 
-- The app was deployed on Render using the free FastAPI web service.
-- Live LLM calls quickly consumed the OpenAI quota, so the hosted instance now falls back to the mock responses. To avoid unexpected charges, the Render service is currently disabled.
-- My credit card balance was not having it :(
+- The app was deployed on Render using the free FastAPI web service at https://alphaagents.onrender.com/.
+- To protect a very limited student budget, the live instance runs without an `OPENAI_API_KEY`. It stays online, but all agents fall back to the deterministic narratives.
+- Re-enable real completions later by adding `OPENAI_API_KEY` in Render’s environment settings and running `/run_ticker` once post-deploy to regenerate the plots.
 
 ## Local Walkthrough
 
