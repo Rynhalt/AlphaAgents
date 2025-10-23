@@ -110,13 +110,8 @@ The paper sketches a debate-driven ensemble of domain agents (fundamental, senti
      fallback.
   2. External retrieval interface – Sketch a search hook (Perplexity/OpenAI Search) the agents can call; for now, just wire up the interface
      and keep using mock data.
-  3. Documentation updates – Note the new env vars (API keys for price retrieval/search) in DEV.md and a sample .env.
-  4. Deployment polish – Ensure Render picks up the latest static assets every deploy (cache busting is mostly done; double-check static
-     settings).
-  5. Future UI niceties – Markdown rendering for the debate log (to show headings/bullets cleanly), richer tooltips, and maybe an option to
-     download logs.
-  6. Econometric models – After a deeper dive into valuation math, wire in factor regressions, discounted cash-flow variants, or cross-sectional signals each agent can call.
-  7. Reinforcement learning experiments – Explore policy-gradient style loops where agents learn critique/revision strategies or the portfolio allocator learns position sizing from reward signals.
+  3. Econometric models – After a deeper dive into valuation math, wire in factor regressions, discounted cash-flow variants, or cross-sectional signals each agent can call.
+  4. Reinforcement learning experiments – Explore policy-gradient style loops where agents learn critique/revision strategies or the portfolio allocator learns position sizing from reward signals.
 
 ----
 
