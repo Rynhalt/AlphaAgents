@@ -1,4 +1,8 @@
 
+# AlphaAgents Demo Guide
+
+This guide gives product reviewers a quick tour of the prototype and explains how to replay the demo locally now that the hosted preview is paused.
+
 ## Hosted Preview (paused)
 
 - The app currently lives at https://alphaagents.onrender.com/ (free Render tier). If the service sits idle, Render auto-suspends it and it spins back up on first request.
@@ -23,31 +27,23 @@
    ```
 4. Visit `http://127.0.0.1:8000/`, hard-refresh, and press **Start Session**. That single click runs the full pipeline (LLM fallbacks if `OPENAI_API_KEY` is missing), populates the debate log, and regenerates the Matplotlib charts. No manual `curl` call is needed unless you want to script the demo.
 
-## Demo Assets
+## Demo Walkthrough
 
-| Asset | Description |
-|-------|-------------|
-| `docs/media/start-session-thumb.png` | Thumbnail shown before the “Start Session” demo link. |
-| `docs/media/start-session-demo.mp4` | Recording that shows clicking **Start Session** and the “Analysing…” phase. |
-| `docs/media/results-thumb.png` | Thumbnail shown before the “Results walkthrough” link. |
-| `docs/media/results-walkthrough.mp4` | Recording that walks through the debate playback, reasoning trace toggle, and coordinator summary. |
-| `docs/media/plot-cumulative.png` | Screenshot of the cumulative return plot. |
-| `docs/media/plot-rolling-sharpe.png` | Screenshot of the rolling Sharpe plot. |
-| `docs/media/plot-drawdown.png` | Screenshot of the drawdown profile. |
-
-### Suggested embedding snippet
-
-```markdown
 ![Start Session preview](docs/media/start-session-thumb.png)
-[▶️ Watch the Start Session demo](docs/media/start-session-demo.mp4)
+[▶️ Start session demo](docs/media/start-session-demo.mp4) — Click-through recording that shows the button press, the “Analysing…” state, and the debate replay kicking off.
 
 ![Results walkthrough preview](docs/media/results-thumb.png)
-[▶️ Watch the results walkthrough](docs/media/results-walkthrough.mp4)
+[▶️ Results walkthrough demo](docs/media/results-walkthrough.mp4) — Deep dive into the post-run UI: coordinator insights, reasoning trace toggle, and regenerated plots.
 
-![Cumulative return chart](docs/media/plot-cumulative.png)
-![Rolling Sharpe chart](docs/media/plot-rolling-sharpe.png)
-![Drawdown chart](docs/media/plot-drawdown.png)
-```
+![Cumulative return chart](docs/media/plot-cumulative.png) | Cumulative Return – tracks how $1 invested in the equal-weight portfolio grows over time. Since the mock AAPL path bakes in positive
+    drift, you see that steady upward slope, which signals the simulated strategy is “making money” run after run.
+
+![Rolling Sharpe chart](docs/media/plot-rolling-sharpe.png) | Rolling Sharpe (21-day window) – measures risk-adjusted return over a rolling month. High readings (the mock series hovers around 10)
+    mean you’re getting a lot of return per unit of volatility; in real markets you’d expect much lower values once actual price noise comes
+    into play.
+
+![Drawdown chart](docs/media/plot-drawdown.png) | Drawdown – shows the depth of drops from the most recent equity peak. The mock track barely dips below zero, so you’re seeing shallow
+    troughs that quickly recover. With true market prices, drawdown plots usually reveal deeper, longer-lived “valleys” during sell-offs.
 
 ### Plot Interpretations
 
