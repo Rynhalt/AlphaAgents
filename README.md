@@ -1,8 +1,10 @@
 # AlphaAgents
 
-This is a personal project developed by Marcus Izumi, in an attempt to implement a prototype for multi-agent framework as discussed in the paper written by BlackRock research scientists in August this year (2025):
+This project explores a personal prototype inspired by BlackRock’s August 2025 research note on multi-agent LLM systems for equity portfolios:
 - *AlphaAgents: Large Language Model based Multi-Agents for Equity Portfolio Constructions*
 - https://arxiv.org/html/2508.11152v1
+
+The paper sketches a debate-driven ensemble of domain agents (fundamental, sentiment, valuation) that iteratively critique each other before a coordinator forms a trade decision. It highlights promising backtest results and governance benefits, but it ships no reference code or architectural deep dive. I started this repository to reverse-engineer the described workflow, fill in the missing technical details, and learn what it would take to operationalize such a system end to end.
 
 ---
 
@@ -18,6 +20,12 @@ This is a personal project developed by Marcus Izumi, in an attempt to implement
     (cumulative_return.png, rolling_sharpe.png).
   - Front-end (FastAPI + Jinja) includes risk-profile selection, color-coded live debate stream, collapsible coordinator insights, reasoning
     trace viewer, and auto-refreshing plots.
+
+  ## Current Status & Limitations
+
+  - The agents currently reason over structured mock data and qualitative heuristics; they do **not** run quantitative valuation models or econometric screens yet, so the output is educational rather than trading-ready.
+  - Over the next few weeks I plan to study econometrics/financial time-series methods and fold formal factor models into each agent’s toolset (e.g., DCF variants, cross-sectional regressions, event studies).
+  - I am also exploring reinforcement learning hooks—so future iterations can simulate debate policies or portfolio adjustments that learn from reward signals rather than fixed heuristics.
 
   ---
 
@@ -105,6 +113,8 @@ This is a personal project developed by Marcus Izumi, in an attempt to implement
      settings).
   5. Future UI niceties – Markdown rendering for the debate log (to show headings/bullets cleanly), richer tooltips, and maybe an option to
      download logs.
+  6. Econometric models – After a deeper dive into valuation math, wire in factor regressions, discounted cash-flow variants, or cross-sectional signals each agent can call.
+  7. Reinforcement learning experiments – Explore policy-gradient style loops where agents learn critique/revision strategies or the portfolio allocator learns position sizing from reward signals.
 
 ----
 
