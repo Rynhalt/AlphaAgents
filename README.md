@@ -1,6 +1,6 @@
 # AlphaAgents
 
-This project explores a personal prototype inspired by BlackRock’s August 2025 research note on multi-agent LLM systems for equity portfolios:
+This personal project by Marcus Izumi explores a prototype of multi-agent framework used for stock evaluation, inspired by BlackRock’s August 2025 research note on multi-agent LLM systems for equity portfolios:
 - *AlphaAgents: Large Language Model based Multi-Agents for Equity Portfolio Constructions*
 - https://arxiv.org/html/2508.11152v1
 
