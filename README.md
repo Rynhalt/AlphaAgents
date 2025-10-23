@@ -18,6 +18,8 @@ The paper sketches a debate-driven ensemble of domain agents (fundamental, senti
     and bullet points; falls back gracefully otherwise.
   - Portfolio backtester builds equal-weight portfolios off the consensus, runs a mock return simulation, and saves Matplotlib plots
     (cumulative_return.png, rolling_sharpe.png).
+  - **Matplotlib-powered dashboards** regenerate cumulative return, rolling Sharpe, and drawdown charts for each session and serve them
+    through the FastAPI static assets.
   - Front-end (FastAPI + Jinja) includes risk-profile selection, color-coded live debate stream, collapsible coordinator insights, reasoning
     trace viewer, and auto-refreshing plots.
 
