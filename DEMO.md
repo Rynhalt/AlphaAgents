@@ -35,14 +35,14 @@ This guide gives product reviewers a quick tour of the prototype and explains ho
 ![Results walkthrough preview](docs/media/results-thumb.png)
 [▶️ Results walkthrough demo](docs/media/results-walkthrough.mp4) — Deep dive into the post-run UI: coordinator insights, reasoning trace toggle, and regenerated plots.
 
-![Cumulative return chart](docs/media/plot-cumulative.png) | Cumulative Return – tracks how $1 invested in the equal-weight portfolio grows over time. Since the mock AAPL path bakes in positive
+![Cumulative return chart](docs/media/plot-cumulative.png)  Cumulative Return – tracks how $1 invested in the equal-weight portfolio grows over time. Since the mock AAPL path bakes in positive
     drift, you see that steady upward slope, which signals the simulated strategy is “making money” run after run.
 
-![Rolling Sharpe chart](docs/media/plot-rolling-sharpe.png) | Rolling Sharpe (21-day window) – measures risk-adjusted return over a rolling month. High readings (the mock series hovers around 10)
+![Rolling Sharpe chart](docs/media/plot-rolling-sharpe.png)  Rolling Sharpe (21-day window) – measures risk-adjusted return over a rolling month. High readings (the mock series hovers around 10)
     mean you’re getting a lot of return per unit of volatility; in real markets you’d expect much lower values once actual price noise comes
     into play.
 
-![Drawdown chart](docs/media/plot-drawdown.png) | Drawdown – shows the depth of drops from the most recent equity peak. The mock track barely dips below zero, so you’re seeing shallow
+![Drawdown chart](docs/media/plot-drawdown.png)  Drawdown – shows the depth of drops from the most recent equity peak. The mock track barely dips below zero, so you’re seeing shallow
     troughs that quickly recover. With true market prices, drawdown plots usually reveal deeper, longer-lived “valleys” during sell-offs.
 
 ### Plot Interpretations
