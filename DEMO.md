@@ -4,8 +4,8 @@ This guide gives product reviewers a quick tour of the prototype and explains ho
 
 ## Hosted Preview (paused)
 
-- The app was deployed on Render using the free FastAPI web service at https://alphaagents.onrender.com/.
-- To protect a very limited student budget, the live instance runs without an `OPENAI_API_KEY`. It stays online, but all agents fall back to the deterministic narratives.
+- The app was deployed on Render using the free FastAPI web service at https://alphaagents.onrender.com/.   ##If the website is inactive for a while, it gets undeployed due to author's free tier accoutn....
+- To protect author's very limited student budget, the live instance runs without an `OPENAI_API_KEY`. It stays online, but all agents fall back to the deterministic narratives.
 - Re-enable real completions later by adding `OPENAI_API_KEY` in Render’s environment settings and running `/run_ticker` once post-deploy to regenerate the plots.
 
 ## Local Walkthrough
