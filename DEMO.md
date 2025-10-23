@@ -26,17 +26,15 @@ This guide gives product reviewers a quick tour of the prototype and explains ho
    ```
 4. Visit `http://127.0.0.1:8000/`, hard-refresh, and press **Start Session**. That single click runs the full pipeline (LLM fallbacks if `OPENAI_API_KEY` is missing), populates the debate log, and regenerates the Matplotlib charts. No manual `curl` call is needed unless you want to script the demo.
 
-## Demo Assets (placeholders)
-
-Store captured media under `docs/media/` and update the table below with actual filenames.
+## Demo 
 
 | Asset | Description |
 |-------|-------------|
-| `docs/media/start-session-demo.mp4` | Recording that shows clicking **Start Session** and the “Analysing…” phase. |
-| `docs/media/results-walkthrough.mp4` | Recording that walks through the debate playback, reasoning trace toggle, and coordinator summary. |
-| `docs/media/plot-cumulative.png` | Screenshot of the cumulative return plot. |
-| `docs/media/plot-rolling-sharpe.png` | Screenshot of the rolling Sharpe plot. |
-| `docs/media/plot-drawdown.png` | Screenshot of the drawdown profile. |
+| [▶️ Start session demo](docs/media/start-session-demo.mp4) | Recording that shows clicking **Start Session** and the “Analysing…” phase. |
+| [▶️ Results walkthrough demo](docs/media/start-session-demo.mp4) | Recording that walks through the debate playback, reasoning trace toggle, and coordinator summary. |
+|![Cumulative return chart](docs/media/plot-cumulative.png) | Screenshot of the cumulative return plot. |
+|![Rolling sharpe chart](docs/media/plot-rolling-sharpe.png) | Screenshot of the rolling Sharpe plot. |
+| ![Drawdown_chart](docs/media/plot-drawdown.png) | Screenshot of the drawdown profile. |
 
 ## Known Limitations
 
