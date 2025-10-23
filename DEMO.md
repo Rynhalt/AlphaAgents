@@ -31,7 +31,7 @@ This guide gives product reviewers a quick tour of the prototype and explains ho
 | Asset | Description |
 |-------|-------------|
 | [▶️ Start session demo](docs/media/start-session-demo.mp4) | Recording that shows clicking **Start Session** and the “Analysing…” phase. |
-| [▶️ Results walkthrough demo](docs/media/start-session-demo.mp4) | Recording that walks through the debate playback, reasoning trace toggle, and coordinator summary. |
+| [▶️ Results walkthrough demo](docs/media/results-walkthrough-demo.mp4) | Recording that walks through the debate playback, reasoning trace toggle, and coordinator summary. |
 |![Cumulative return chart](docs/media/plot-cumulative.png) | Screenshot of the cumulative return plot. |
 |![Rolling sharpe chart](docs/media/plot-rolling-sharpe.png) | Screenshot of the rolling Sharpe plot. |
 | ![Drawdown_chart](docs/media/plot-drawdown.png) | Screenshot of the drawdown profile. |
