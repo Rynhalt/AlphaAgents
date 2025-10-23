@@ -21,6 +21,8 @@ The paper sketches a debate-driven ensemble of domain agents (fundamental, senti
   - Front-end (FastAPI + Jinja) includes risk-profile selection, color-coded live debate stream, collapsible coordinator insights, reasoning
     trace viewer, and auto-refreshing plots.
 
+  👉 **Want a quick tour?** Check out [DEMO.md](DEMO.md) for screenshots, screen recordings, and instructions on replaying the demo locally or via the Render preview link.
+
   ## Current Status & Limitations
 
   - The agents currently reason over structured mock data and qualitative heuristics; they do **not** run quantitative valuation models or econometric screens yet, so the output is educational rather than trading-ready.
