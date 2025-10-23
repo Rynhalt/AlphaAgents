@@ -8,14 +8,14 @@ import json
 import random
 from uuid import uuid4
 from pathlib import Path
-from typing import Dict, Iterable, List, Optional
+from typing import Any, Dict, Iterable, List, Optional
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from agents.base_agent import AgentReport, AgentRole
+from agents.base_agent import AgentDecision, AgentReport, AgentRole
 from agents.coordinator import Coordinator
 from agents.debate import DebateEngine, stream_messages
 from agents.dummy_agent import DummyAgent
@@ -25,6 +25,7 @@ from agents.valuation_agent import ValuationAgent
 from portfolio.backtest import run_backtest
 from portfolio.selector import equal_weight_selection
 from pydantic import BaseModel
+from eval.reasoning_trace import ReasoningTraceLogger
 
 app = FastAPI(title="AlphaAgents")
 BASE_DIR = Path(__file__).resolve().parent
@@ -36,6 +37,7 @@ sentiment_agent = SentimentAgent()
 valuation_agent = ValuationAgent()
 static_plot_dir = BASE_DIR / "static" / "plots"
 storage_dir = Path("storage")
+trace_logger = ReasoningTraceLogger(storage_dir / "reasoning_trace.jsonl")
 
 
 @app.get("/health")
@@ -125,19 +127,13 @@ async def run_ticker(payload: RunTickerRequest) -> Dict[str, object]:
     }
     debate_messages = debate_engine.run(agents_map, reports_by_role, session_id=session_id)
 
-    backtest_result: Dict[str, float] = {}
-
     coordinator = Coordinator(risk_profile=payload.risk_profile)
-    consensus = coordinator.aggregate(
-        reports,
-        ticker=ticker,
-        asof_date=asof,
-        debate_messages=[msg.model_dump() for msg in debate_messages],
-        backtest=backtest_result,
-        session_id=session_id,
-    )
 
-    decisions = {ticker: consensus.final_decision.value}
+    buy_reports = [report for report in reports if report.decision is AgentDecision.BUY]
+    sell_reports = [report for report in reports if report.decision is AgentDecision.SELL]
+    pre_decision = coordinator._resolve_decision(buy_reports, sell_reports)
+
+    decisions = {ticker: pre_decision.value}
     weights = equal_weight_selection(decisions)
     returns = {ticker: _generate_mock_returns(ticker)}
 
@@ -146,6 +142,15 @@ async def run_ticker(payload: RunTickerRequest) -> Dict[str, object]:
         returns,
         storage_dir=storage_dir,
         plot_dir=static_plot_dir,
+    )
+
+    consensus = coordinator.aggregate(
+        reports,
+        ticker=ticker,
+        asof_date=asof,
+        debate_messages=[msg.model_dump() for msg in debate_messages],
+        backtest=backtest_result,
+        session_id=session_id,
     )
 
     plot_urls = {
@@ -173,6 +178,18 @@ def _sse_generator(messages: Iterable) -> Iterable[str]:
     """Wrap debate messages into SSE-formatted strings."""
     for chunk in stream_messages(messages):
         yield chunk
+
+
+@app.get("/api/trace/{session_id}")
+async def get_trace(session_id: str) -> Dict[str, Any]:
+    """Return reasoning trace entries for a given session."""
+    entries = trace_logger.read()
+    filtered = [
+        entry.model_dump()
+        for entry in entries
+        if entry.session_id == session_id
+    ]
+    return {"entries": filtered}
 
 
 async def _gather_agent_reports(

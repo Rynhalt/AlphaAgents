@@ -20,9 +20,16 @@ body {
   display: flex;
   gap: 1rem;
   align-items: flex-end;
+  flex-wrap: wrap;
 }
 
 .run-form input {
+  padding: 0.5rem;
+  border-radius: 4px;
+  border: 1px solid #334155;
+}
+
+.run-form select {
   padding: 0.5rem;
   border-radius: 4px;
   border: 1px solid #334155;
@@ -89,6 +96,7 @@ body {
 .debate-entry {
   padding: 0.75rem;
   border-bottom: 1px solid rgba(248, 250, 252, 0.1);
+  border-left: 4px solid transparent;
 }
 
 .debate-entry .meta {
@@ -102,4 +110,119 @@ body {
 
 .debate-entry .content {
   font-size: 0.95rem;
+}
+
+.debate-fundamental {
+  border-left-color: #38bdf8;
+}
+
+.debate-sentiment {
+  border-left-color: #22c55e;
+}
+
+.debate-valuation {
+  border-left-color: #f97316;
+}
+
+.debate-coordinator {
+  border-left-color: #eab308;
+}
+
+.trace-panel,
+.plots-panel {
+  background: #1e293b;
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.4);
+  margin-top: 2rem;
+}
+
+.trace-panel header,
+.plots-panel header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.trace-actions {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.trace-actions button {
+  padding: 0.5rem 1rem;
+  background: #64748b;
+  border: none;
+  border-radius: 4px;
+  color: #f8fafc;
+  cursor: pointer;
+}
+
+.trace-decision {
+  font-weight: 600;
+  color: #eab308;
+}
+
+.trace-content {
+  margin-top: 1rem;
+  background: rgba(15, 23, 42, 0.5);
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.trace-content.hidden {
+  display: none;
+}
+
+.trace-content pre {
+  background: rgba(15, 23, 42, 0.8);
+  padding: 0.75rem;
+  border-radius: 6px;
+  overflow-x: auto;
+}
+
+#trace-log {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 1rem;
+}
+
+#trace-log li {
+  border-left: 4px solid #38bdf8;
+  padding-left: 0.75rem;
+}
+
+.plots-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+
+.plots-grid figure {
+  margin: 0;
+  text-align: center;
+  background: rgba(15, 23, 42, 0.5);
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.plots-grid img {
+  max-width: 100%;
+  border-radius: 4px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+#backtest-summary {
+  display: flex;
+  gap: 1.5rem;
+  font-weight: 500;
+}
+.run-form select {
+  padding: 0.5rem;
+  border-radius: 4px;
+  border: 1px solid #334155;
 }
