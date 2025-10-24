@@ -190,7 +190,7 @@ The paper introduces a debate-driven ensemble of domain agents—fundamental, se
   - Once the debate ends, the coordinator synthesizes the final explanation and passes it along with the majority decision to the front-end/
     backtester.
 
-As a concrete example? The session logs in [docs/debate_flow_walkthrough.md](docs/debate_flow_walkthrough.md) quotes the critique/revision dialogue and the reasoning trace for AAPL, where the flow of the debate has been explained briefly.
+For better explanation of the flow of the deabte: session logs in [debate_flow_walkthrough.md](debate_flow_walkthrough.md) quotes the critique/revision dialogue and the reasoning trace for AAPL, where the flow of the debate has been explained briefly.
 
     
 # 🏦👾Personal Background / Motivation🍣🛸
