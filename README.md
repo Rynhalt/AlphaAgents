@@ -4,7 +4,7 @@ This personal project by Marcus Izumi explores a prototype of multi-agent framew
 - *AlphaAgents: Large Language Model based Multi-Agents for Equity Portfolio Constructions*
 - https://arxiv.org/html/2508.11152v1
 
-The paper sketches a debate-driven ensemble of domain agents (fundamental, sentiment, valuation) that iteratively critique each other before a coordinator forms a trade decision. It highlights promising backtest results and governance benefits, but it ships no reference code or architectural deep dive. I started this repository to reverse-engineer the described workflow, fill in the missing technical details, and learn what it would take to operationalize such a system end to end.
+The paper introduces a debate-driven ensemble of domain agents—fundamental, sentiment, and valuation—that critique each other before a coordinator reaches a final decision. Although the results and design principles are intriguing, the paper offers no open-source implementation or technical breakdown. I built this repository in an attempt recreate and extend that framework.
 
 ---
 
