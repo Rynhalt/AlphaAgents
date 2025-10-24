@@ -3,9 +3,7 @@
 ## Hosted Preview (paused)
 
 - The app currently lives at https://alphaagents.onrender.com/ (free Render tier). If the service sits idle, Render auto-suspends it and it spins back up on first request.
-- To protect the student budget, the deployment omits `OPENAI_API_KEY`. Agents run in deterministic fallback mode, so you’ll see the mock narratives rather than live completions.
-- To re-enable real calls later: add `OPENAI_API_KEY` in Render’s dashboard, redeploy, then hit `/run_ticker` once so Matplotlib regenerates the PNGs.
-
+- To protect my limited student budget, the deployment omits `OPENAI_API_KEY`. Agents run in deterministic fallback mode, so you’ll see the mock narratives rather than live completions.
 ## Local Walkthrough
 
 1. Create the virtual environment (Python 3.9+):
