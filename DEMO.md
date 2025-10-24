@@ -25,10 +25,10 @@
 ## Demo Walkthrough
 
 ![Start Session preview](docs/media/start-session-thumb.png)
-[▶️ Start session demo](docs/media/start-session-demo.mp4) — Click-through recording that shows the button press, the “Analysing…” state, and the debate replay kicking off.
+[▶️ Start session demo](docs/media/start-session-demo.mp4) — Click-through recording that shows the button press, the “Analysing…” state, and the debate kicking off in the back.
 
 ![Results walkthrough preview](docs/media/results-thumb.png)
-[▶️ Results walkthrough demo](docs/media/results-walkthrough.mp4) — Deep dive into the post-run UI: coordinator insights, reasoning trace toggle, and regenerated plots.
+[▶️ Results walkthrough demo](docs/media/results-walkthrough.mp4) — Scrolling through the post-run UI: coordinator insights, reasoning trace toggle, and regenerated plots.
 
 ![Cumulative return chart](docs/media/plot-cumulative.png)  Cumulative Return – tracks how $1 invested in the equal-weight portfolio grows over time. Since the mock AAPL path bakes in positive
     drift, you see that steady upward slope, which signals the simulated strategy is “making money” run after run.
