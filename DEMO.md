@@ -40,12 +40,6 @@
 ![Drawdown chart](docs/media/plot-drawdown.png)  Drawdown – shows the depth of drops from the most recent equity peak. The mock track barely dips below zero, so you’re seeing shallow
     troughs that quickly recover. With true market prices, drawdown plots usually reveal deeper, longer-lived “valleys” during sell-offs.
 
-### Plot Interpretations
-
-- **Cumulative Return**: Demonstrates the growth of $1 in the equal-weight portfolio produced by the debate. Using the AAPL mock series, the curve trends upward to showcase a positive return profile.
-- **Rolling Sharpe (21-day window)**: Illustrates risk-adjusted performance over a monthly horizon. The mock dataset keeps values elevated (≈10+) for visibility; expect lower numbers once real OHLCV data is introduced.
-- **Drawdown**: Highlights the depth of peak-to-trough declines. With the gentle mock path, drawdowns stay close to zero, indicating limited downside in the simulated track—real market data will inject more noticeable troughs.
-
 ## Known Limitations
 
 - Only the mock tickers (`AAPL`, `MSFT`, `TSLA`) have structured context today.
