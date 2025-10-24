@@ -1,7 +1,4 @@
 
-# AlphaAgents Demo Guide
-
-This guide gives product reviewers a quick tour of the prototype and explains how to replay the demo locally now that the hosted preview is paused.
 
 ## Hosted Preview (paused)
 
