@@ -195,9 +195,9 @@ For better explanation of the flow of the deabte: session logs in [debate_flow_w
     
 # 🏦👾Personal Background / Motivation🍣🛸
 
-Recently, I completed a software engineer internship at an investment bank, and was exposed to equity systems and how technology really intersects with financial markets - and then I heard about this paper.
+Recently, I has a software engineer internship at an investment bank, and was exposed to equity systems and how technology really intersects with financial markets, and got to know these people called "equity research analysts", which I thought was really cool - and then I heard about this paper.
 
-When reading through the paper, I noticed there was not a lot of technical explanation or code snippets on how the framework was built and explored, so I decided to try to implement them.
+Though fascinating, when reading through the paper, I noticed there was not a lot of technical explanation or code snippets on how the framework was built and explored, so I decided to try to implement them.
 
 The personal goal here, for me, is to be familaized with multi-agentic frameworks, as well as to get a sense of how fundamental, technical and macro analysis are done during the valuation of their stocks.
 
