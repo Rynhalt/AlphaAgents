@@ -202,4 +202,3 @@ The personal goal here, for me, is to be familaized with multi-agentic framework
 
 Current emphasis is on reasoning and architecture; quantitative modeling will follow once the framework stabilizes.
 
-The current implementation focuses on architecture, agent interaction, and reasoning flow, not on financial accuracy or quantitative modeling.
