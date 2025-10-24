@@ -181,7 +181,7 @@ The paper introduces a debate-driven ensemble of domain agents—fundamental, se
 
 ```
 
-### Quick recap:
+### In short...
 
   - Each round has two phases: critiques (agents review peers) and revisions (agents update their own report).
   - Every LLM call (agent or coordinator) goes through BaseAgent.query_llm(), pulling context from MockRetriever and falling back to
