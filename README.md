@@ -1,4 +1,5 @@
 # AlphaAgents
+[![View Demo](https://img.shields.io/badge/View%20Demo-DEMO.md-blue?style=for-the-badge)](./DEMO.md)
 
 This personal project by Marcus Izumi explores a prototype of multi-agent framework used for stock evaluation, inspired by BlackRock’s August 2025 research note on multi-agent LLM systems for equity portfolios:
 - *AlphaAgents: Large Language Model based Multi-Agents for Equity Portfolio Constructions*
