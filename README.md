@@ -8,7 +8,7 @@ The paper sketches a debate-driven ensemble of domain agents (fundamental, senti
 
 ---
 
-  ## Features 
+  ## Features (Bear with My Emojis...)
 
   - 🤖 LLM-driven agents for fundamental, sentiment, and valuation analysis—each generates structured reports (decision, confidence, rationale,
     metrics) with OpenAI fallback.
