@@ -211,7 +211,7 @@ DEV.md
 MILESTONE.md
 Prompt.md
 app/static/plots/*.png
-storage/portfolio_weights.csv
-storage/debate_log.jsonl
-storage/consensus.jsonl
-storage/reasoning_trace.jsonl
+storage/archive/portfolio_weights.csv
+storage/archive/debate_log.jsonl
+storage/archive/consensus.jsonl
+storage/archive/reasoning_trace.jsonl
