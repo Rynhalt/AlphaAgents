@@ -8,19 +8,19 @@ The paper sketches a debate-driven ensemble of domain agents (fundamental, senti
 
 ---
 
-  ## Features (Bear with My Emojis...)
+  ## Features 
 
-  - 🤖 LLM-driven agents for fundamental, sentiment, and valuation analysis—each generates structured reports (decision, confidence, rationale,
+  - 1 LLM-driven agents for fundamental, sentiment, and valuation analysis—each generates structured reports (decision, confidence, rationale,
     metrics) with OpenAI fallback.
-  - 🧠 Debate engine runs two critique/revision rounds, streams messages via SSE, and logs every prompt/response to storage/
+  - 2 Debate engine runs two critique/revision rounds, streams messages via SSE, and logs every prompt/response to storage/
     reasoning_trace.jsonl.
-  - 🧮 Coordinator synthesizes the final consensus (majority vote + tie-breaker) and, when the key is available, calls the LLM for a narrative
+  - 3 Coordinator synthesizes the final consensus (majority vote + tie-breaker) and, when the key is available, calls the LLM for a narrative
     and bullet points; falls back gracefully otherwise.
-  - 📈 Portfolio backtester builds equal-weight portfolios off the consensus, runs a mock return simulation, and saves Matplotlib plots
+  - 4 Portfolio backtester builds equal-weight portfolios off the consensus, runs a mock return simulation, and saves Matplotlib plots
     (cumulative_return.png, rolling_sharpe.png).
-  - 🎨 **Matplotlib-powered dashboards** regenerate cumulative return, rolling Sharpe, and drawdown charts for each session and serve them
+  - 5 **Matplotlib-powered dashboards** regenerate cumulative return, rolling Sharpe, and drawdown charts for each session and serve them
     through the FastAPI static assets.
-  - 💻 Front-end (FastAPI + Jinja) includes risk-profile selection, color-coded live debate stream, collapsible coordinator insights, reasoning
+  - 6 Front-end (FastAPI + Jinja) includes risk-profile selection, color-coded live debate stream, collapsible coordinator insights, reasoning
     trace viewer, and auto-refreshing plots.
 
   👉 **Want a quick tour?** Check out [DEMO.md](DEMO.md) for screenshots, screen recordings, and instructions on replaying the demo locally or via the Render preview link.
