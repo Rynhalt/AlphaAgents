@@ -14,7 +14,7 @@ The paper introduces a debate-driven ensemble of domain agents—fundamental, se
  1) LLM-driven agents for fundamental, sentiment, and valuation analysis—each generates structured reports (decision, confidence, rationale,
     metrics) with OpenAI fallback.
  2) Debate engine runs two critique/revision rounds, streams messages via SSE, and logs every prompt/response to storage/
-    reasoning_trace.jsonl. A full transcript with citations lives in [docs/debate_flow_walkthrough.md](docs/debate_flow_walkthrough.md).
+    reasoning_trace.jsonl. A breakdown for AAPL tick with citations lives in [docs/debate_flow_walkthrough.md](docs/debate_flow_walkthrough.md).
  3) Coordinator synthesizes the final consensus (majority vote + tie-breaker) and, when the key is available, calls the LLM for a narrative
     and bullet points; falls back gracefully otherwise.
  4) Portfolio backtester builds equal-weight portfolios off the consensus, runs a mock return simulation, and saves Matplotlib plots
