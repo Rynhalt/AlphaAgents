@@ -28,7 +28,7 @@ The paper sketches a debate-driven ensemble of domain agents (fundamental, senti
   ## Current Status & Limitations
 
   - The agents currently reason over structured mock data and qualitative heuristics; they do **not** run quantitative valuation models or econometric screens yet, so the output is educational rather than trading-ready.
-  - Over the next few weeks I plan to study econometrics/financial time-series methods and fold formal factor models into each agent’s toolset (e.g., DCF variants, cross-sectional regressions, event studies).
+  - Econometrics/financial time-series methods and fold formal factor models should be implemented into each agent’s toolset (e.g., DCF variants, cross-sectional regressions, event studies).
   - I am also exploring reinforcement learning hooks—so future iterations can simulate debate policies or portfolio adjustments that learn from reward signals rather than fixed heuristics.
 
   ---
