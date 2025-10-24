@@ -1,5 +1,5 @@
 # AlphaAgents
-[![View Demo](https://img.shields.io/badge/View%20Demo-DEMO.md-blue?style=for-the-badge)](./DEMO.md)
+## 👉 **Want a quick tour?** Check out [![View Demo](https://img.shields.io/badge/View%20Demo-DEMO.md-blue?style=for-the-badge)](./DEMO.md) for screenshots, screen recordings, and instructions on replaying the demo locally or via the Render preview link.
 
 This personal project by Marcus Izumi explores a prototype of multi-agent framework used for stock evaluation, inspired by BlackRock’s August 2025 research note on multi-agent LLM systems for equity portfolios:
 - *AlphaAgents: Large Language Model based Multi-Agents for Equity Portfolio Constructions*
@@ -23,8 +23,6 @@ The paper introduces a debate-driven ensemble of domain agents—fundamental, se
     through the FastAPI static assets.
  6) Front-end (FastAPI + Jinja) includes risk-profile selection, color-coded live debate stream, collapsible coordinator insights, reasoning
     trace viewer, and auto-refreshing plots.
-
-  👉 **Want a quick tour?** Check out [DEMO.md](DEMO.md) for screenshots, screen recordings, and instructions on replaying the demo locally or via the Render preview link.
 
   ## Current Status & Limitations
 
