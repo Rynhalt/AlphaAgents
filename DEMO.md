@@ -40,9 +40,5 @@
 ![Drawdown chart](docs/media/plot-drawdown.png)  Drawdown – shows the depth of drops from the most recent equity peak. The mock track barely dips below zero, so you’re seeing shallow
     troughs that quickly recover. With true market prices, drawdown plots usually reveal deeper, longer-lived “valleys” during sell-offs.
 
-## Known Limitations
 
-- Only the mock tickers (`AAPL`, `MSFT`, `TSLA`) have structured context today.
-- LLM calls fall back to deterministic text when the `OPENAI_API_KEY` env var is missing or quota is exhausted.
-- The “Live Debate Stream” replays messages after the API call finishes; true streaming will land in a later milestone.
-- Render deployment cannot persist the generated PNGs across restarts; re-run `/run_ticker` once per deploy.
+
